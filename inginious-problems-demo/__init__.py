@@ -82,7 +82,7 @@ class DisplayableDemoProblem(DemoProblem, DisplayableBasicProblem):
         """ Get the renderer for this class problem """
         return template_helper.get_custom_renderer(os.path.join(PATH_TO_PLUGIN, "templates"), False)
 
-    def show_input(self, template_helper, language):
+    def show_input(self, template_helper, language, seed):
         """ Show MatchProblem """
         return str(DisplayableDemoProblem.get_renderer(template_helper).demo(self.get_id()))
 
