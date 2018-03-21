@@ -7,8 +7,8 @@ import os
 import web
 import json
 
-from inginious.common.tasks_problems import BasicProblem
-from inginious.frontend.task_problems import DisplayableBasicProblem
+from inginious.common.tasks_problems import Problem
+from inginious.frontend.task_problems import DisplayableProblem
 
 __version__ = "0.1.dev0"
 
@@ -31,11 +31,11 @@ class StaticMockPage(object):
         return self.GET(path)
 
 
-class DemoProblem(BasicProblem):
+class DemoProblem(Problem):
     """Display an input box and check that the content is correct"""
 
     def __init__(self, task, problemid, content, translations=None):
-        BasicProblem.__init__(self, task, problemid, content, translations)
+        Problem.__init__(self, task, problemid, content, translations)
         self._answer = str(content.get("answer", ""))
 
     @classmethod
@@ -60,14 +60,14 @@ class DemoProblem(BasicProblem):
 
     @classmethod
     def parse_problem(self, problem_content):
-        return BasicProblem.parse_problem(problem_content)
+        return Problem.parse_problem(problem_content)
 
     @classmethod
     def get_text_fields(cls):
-        return BasicProblem.get_text_fields()
+        return Problem.get_text_fields()
 
 
-class DisplayableDemoProblem(DemoProblem, DisplayableBasicProblem):
+class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
     """ A displayable match problem """
 
     def __init__(self, task, problemid, content, translations=None):
