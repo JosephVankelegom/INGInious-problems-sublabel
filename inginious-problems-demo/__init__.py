@@ -90,6 +90,10 @@ class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
     def show_editbox(cls, template_helper, key):
         return DisplayableDemoProblem.get_renderer(template_helper).demo_edit(key)
 
+    @classmethod
+    def show_editbox_templates(cls, template_helper, key):
+        return ""
+
 
 def init(plugin_manager, course_factory, client, plugin_config):
     # TODO: Replace by shared static middleware and let webserver serve the files
