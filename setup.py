@@ -3,8 +3,6 @@
 
 from setuptools import setup, find_packages
 
-import inginious_blockly
-
 setup(
     name="inginious-problems-demo",
     version="0.1dev0",
