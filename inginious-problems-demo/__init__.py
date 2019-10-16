@@ -74,8 +74,8 @@ class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
         DemoProblem.__init__(self, task, problemid, content, translations)
 
     @classmethod
-    def get_type_name(self, gettext):
-        return gettext("demo")
+    def get_type_name(self, language):
+        return "demo"
 
     @classmethod
     def get_renderer(cls, template_helper):
