@@ -87,11 +87,11 @@ class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
         return str(DisplayableDemoProblem.get_renderer(template_helper).demo(self.get_id()))
 
     @classmethod
-    def show_editbox(cls, template_helper, key):
+    def show_editbox(cls, template_helper, key, language):
         return DisplayableDemoProblem.get_renderer(template_helper).demo_edit(key)
 
     @classmethod
-    def show_editbox_templates(cls, template_helper, key):
+    def show_editbox_templates(cls, template_helper, key, language):
         return ""
 
 
