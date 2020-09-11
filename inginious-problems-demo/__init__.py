@@ -34,8 +34,8 @@ class StaticMockPage(object):
 class DemoProblem(Problem):
     """Display an input box and check that the content is correct"""
 
-    def __init__(self, task, problemid, content, translations=None):
-        Problem.__init__(self, task, problemid, content, translations)
+    def __init__(self, problemid, content, translations, taskfs):
+        Problem.__init__(self, problemid, content, translations, taskfs)
         self._answer = str(content.get("answer", ""))
 
     @classmethod
@@ -70,8 +70,8 @@ class DemoProblem(Problem):
 class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
     """ A displayable match problem """
 
-    def __init__(self, task, problemid, content, translations=None):
-        DemoProblem.__init__(self, task, problemid, content, translations)
+    def __init__(self, problemid, content, translations, taskfs):
+        DemoProblem.__init__(self, problemid, content, translations, taskfs)
 
     @classmethod
     def get_type_name(self, language):
