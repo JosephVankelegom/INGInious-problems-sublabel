@@ -13,6 +13,7 @@ from inginious.frontend.task_problems import DisplayableProblem
 __version__ = "0.1.dev0"
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
+PATH_TO_TEMPLATES = os.path.join(PATH_TO_PLUGIN, "templates")
 
 
 class StaticMockPage(object):
@@ -77,18 +78,13 @@ class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
     def get_type_name(self, language):
         return "demo"
 
-    @classmethod
-    def get_renderer(cls, template_helper):
-        """ Get the renderer for this class problem """
-        return template_helper.get_custom_renderer(os.path.join(PATH_TO_PLUGIN, "templates"), False)
-
     def show_input(self, template_helper, language, seed):
-        """ Show MatchProblem """
-        return str(DisplayableDemoProblem.get_renderer(template_helper).demo(self.get_id()))
+        """ Show DemoProblem """
+        return template_helper.render("demo.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id())
 
     @classmethod
     def show_editbox(cls, template_helper, key, language):
-        return DisplayableDemoProblem.get_renderer(template_helper).demo_edit(key)
+        return template_helper.render("demo_edit.html", template_folder=PATH_TO_TEMPLATES, key=key)
 
     @classmethod
     def show_editbox_templates(cls, template_helper, key, language):
