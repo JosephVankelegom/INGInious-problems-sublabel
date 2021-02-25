@@ -11,3 +11,7 @@ function studio_init_template_demo(well, pid, problem)
     if("answer" in problem)
         $('#answer-' + pid, well).val(problem["answer"]);
 }
+
+function load_feedback_demo(key, content) {
+    load_feedback_code(key, content);
+}
