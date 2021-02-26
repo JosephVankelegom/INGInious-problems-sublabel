@@ -10,6 +10,7 @@ from flask import send_from_directory
 from inginious.common.tasks_problems import Problem
 from inginious.frontend.pages.utils import INGIniousPage
 from inginious.frontend.task_problems import DisplayableProblem
+from inginious.frontend.parsable_text import ParsableText
 
 __version__ = "0.1.dev0"
 
@@ -30,6 +31,7 @@ class DemoProblem(Problem):
 
     def __init__(self, problemid, content, translations, taskfs):
         Problem.__init__(self, problemid, content, translations, taskfs)
+        self._header = content['header'] if "header" in content else ""
         self._answer = str(content.get("answer", ""))
 
     @classmethod
@@ -73,7 +75,9 @@ class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
 
     def show_input(self, template_helper, language, seed):
         """ Show DemoProblem """
-        return template_helper.render("demo.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id())
+        header = ParsableText(self.gettext(language, self._header), "rst",
+                              translation=self.get_translation_obj(language))
+        return template_helper.render("demo.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id(), header=header)
 
     @classmethod
     def show_editbox(cls, template_helper, key, language):
