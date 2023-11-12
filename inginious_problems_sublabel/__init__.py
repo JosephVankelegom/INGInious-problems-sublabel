@@ -6,6 +6,7 @@
 import os
 
 from flask import send_from_directory
+from inginious_problems_sublabel.sublabel_problem import DisplayableSublabelProblem
 
 from inginious.common.tasks_problems import Problem
 from inginious.frontend.pages.utils import INGIniousPage
@@ -90,7 +91,7 @@ class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
 
 def init(plugin_manager, course_factory, client, plugin_config):
     # TODO: Replace by shared static middleware and let webserver serve the files
-    plugin_manager.add_page('/plugins/demo/static/<path:path>', StaticMockPage.as_view("demoproblemstaticpage"))
-    plugin_manager.add_hook("css", lambda: "/plugins/demo/static/demo.css")
-    plugin_manager.add_hook("javascript_header", lambda: "/plugins/demo/static/demo.js")
-    course_factory.get_task_factory().add_problem_type(DisplayableDemoProblem)
+    plugin_manager.add_page('/plugins/sublabel/static/<path:path>', StaticMockPage.as_view("sublabelstaticpage"))
+    plugin_manager.add_hook("css", lambda: "/plugins/sublabel/static/sublabel.css")
+    plugin_manager.add_hook("javascript_header", lambda: "/plugins/sublabel/static/sublabel.js")
+    course_factory.get_task_factory().add_problem_type(DisplayableSublabelProblem)
