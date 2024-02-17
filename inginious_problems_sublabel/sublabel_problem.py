@@ -9,11 +9,15 @@ PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 PATH_TO_TEMPLATES = os.path.join(PATH_TO_PLUGIN, "templates")
 problem_type = "sublabel"
 
+
 class SublabelProblem(Problem):
-    "display code where can select code to label."
+    """display code where can select code to label."""
 
     def __init__(self, problemid, content, translations, taskfs):
         Problem.__init__(self, problemid, content, translations, taskfs)
+        self._header = content['header'] if "header" in content else ""
+        self._answer = str(content.get("answer", ""))
+        self._codeInput = content['codeInput'] if "codeInput" in content else ""
 
     @classmethod
     def get_type(cls):
@@ -26,11 +30,12 @@ class SublabelProblem(Problem):
         return str
 
     def check_answer(self, task_input, language):
-        return None, None, None, 0, ""
+        return True, None, None, 0, ""
 
     @classmethod
     def parse_problem(self, problem_content):
-        return Problem.parse_problem(problem_content)
+        problem_content = Problem.parse_problem(problem_content)
+        return problem_content
 
     @classmethod
     def get_text_fields(cls):
@@ -51,7 +56,8 @@ class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
         """ Show SublabelProblem, student side """
         header = ParsableText(self.gettext(language, self._header), "rst",
                               translation=self.get_translation_obj(language))
-        return template_helper.render("demo.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id(), header=header)
+        return template_helper.render("sublabel.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id(),
+                                      header=header, )
 
     @classmethod
     def show_editbox(cls, template_helper, key, language):

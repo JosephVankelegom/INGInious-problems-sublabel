@@ -1,5 +1,13 @@
 /* nothing here */
 
-.highlight{
-    background-color: greenyellow;
+/*
+.highlight {
+    background-color: yellow;
+}
+*/
+.codeHighlight{
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top : 10px;
+    white-space: pre-wrap;
 }

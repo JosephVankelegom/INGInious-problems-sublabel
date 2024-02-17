@@ -1,24 +1,33 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-
 <div class="form-group row">
     <label for="header-PID" class="col-sm-2 control-label">Context</label>
     <div class="col-sm-10">
-        <textarea id="header-PID" class="form-control" name="problem[PID][header]"></textarea>
+        <textarea id="header-sublabel" class="form-control" name="problem[sublabel][header]"></textarea>
     </div>
-    <div id='debug'> </div>
-
 </div>
 
 <div class="form-group row">
-    <label for="header-PID" class="col-sm-2 control-label">Context</label>
     <div class="col-sm-10">
-        <textarea id="input"></textarea>
-        <textarea id="output"></textarea>
-    <button onclick='myFunction()'>Highlight</button>
+        <textarea id="codeTest" class="form-control" name="problem[sublabel][codeTest]" ></textarea>
     </div>
+</div>
 
+<div class="form-group row">
+    <label for="codeInput-sublabel" class="col-sm-2 control-label">CodeInput</label>
+    <div class="col-sm-10">
+        <textarea id="codeInput-sublabel" class="form-control" oninput="updateText()" name="problem[sublabel][codeInput]" oncontextmenu="highlightFromIndexes(this)"></textarea>
+    </div>
+    <label for="codeHighlight" class="col-sm-2 control-label">Code Highlighted</label>
+    <div class="col-sm-10">
+        <div id="codeHighlight" class="codeHighlight" oncontextmenu="showSelection(this)"></div>
+    </div>
+</div>
+<div>
+    <textarea id="answer-sublabel" readonly name="problem[sublabel][answer]"></textarea>
+    <button type="button"
+            onclick="document.getElementById('answer-sublabel').value = ''">Click me to erase answer</button>
 </div>
 
 
@@ -28,4 +37,7 @@
 
 
 
+
+
+    
 
