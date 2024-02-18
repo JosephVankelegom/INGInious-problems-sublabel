@@ -1,5 +1,6 @@
 
 
+let highlightArray = [];
 function load_input_sublabel(submissionid, key, input) {
     var field = $("form#task input[name='" + key + "']");
     if(key in input)
@@ -95,4 +96,24 @@ function showSelection(textarea){
     document.getElementById("testSelection").textContent = getSelectionText(textarea);
 }
 
-$('.codeTest').highlightWithinTextarea({highlight: 'p'});
+
+/*$(document).ready(function() {
+
+    $('#codeTest').highlightWithinTextarea({highlight: highlightArray});
+
+    window.addSelectionToArray = function(){
+        let indexStart = getIndexStartSelection('codeTest')
+        let indexEnd = getIndexEndSelection('codeTest')
+        highlightArray.push([indexStart,indexEnd]);
+        let codeArea =  $('#codeTest')
+        codeArea.highlightWithinTextarea('update');
+        console.log('Selection added:', highlightArray);
+    }
+    window.eraseArray = function(){
+        highlightArray = [];
+        console.log('Array erased:', highlightArray);
+    }
+
+    $('#codeTest').keyup(addSelectionToArray);
+    $('#eraseButton').on("click",eraseArray);
+});*/

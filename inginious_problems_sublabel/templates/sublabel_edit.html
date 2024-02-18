@@ -1,6 +1,7 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
+
 <div class="form-group row">
     <label for="header-PID" class="col-sm-2 control-label">Context</label>
     <div class="col-sm-10">
@@ -9,11 +10,46 @@
 </div>
 
 <div class="form-group row">
-    <div class="col-sm-10">
-        <textarea id="codeTest" class="form-control" name="problem[sublabel][codeTest]" ></textarea>
-    </div>
+    <label for="Code-PID" class="col-sm-2 control-label">Code</label>
+    <textarea id="codeTest" class="codeTest"></textarea>
+    <button id="eraseButton" type="button">Click me to erase answer</button>
+</div>
+<div class="form-group row">
+    <label for="Values-PID" class="col-sm-2 control-label">Values</label>
+    <textarea id="values" class="codeTest"></textarea>
+    <button id="updateValues" type="button">Click me to update values</button>
 </div>
 
+<script>
+    $(document).ready(function() {
+        let highlightValueArray = [];
+        $('#codeTest').highlightWithinTextarea({ highlight: highlightValueArray });
+        function updateValues() {
+            let textarea = $('#codeTest')
+            textarea.highlightWithinTextarea('destroy');
+            textarea.highlightWithinTextarea({ highlight: highlightValueArray });
+
+        }
+
+
+
+
+        document.getElementById('eraseButton').addEventListener('mousedown', function() {
+            const codeAreaval = document.getElementById('codeTest');
+            let selS = codeAreaval.selectionStart;
+            let selE = codeAreaval.selectionEnd;
+            highlightValueArray.push([selS,selE]);
+            updateValues();
+
+        })
+        {# $('#eraseButton').on("mousedown",updateValues); #}
+
+
+    });
+</script>
+
+
+{#
 <div class="form-group row">
     <label for="codeInput-sublabel" class="col-sm-2 control-label">CodeInput</label>
     <div class="col-sm-10">
@@ -24,11 +60,8 @@
         <div id="codeHighlight" class="codeHighlight" oncontextmenu="showSelection(this)"></div>
     </div>
 </div>
-<div>
-    <textarea id="answer-sublabel" readonly name="problem[sublabel][answer]"></textarea>
-    <button type="button"
-            onclick="document.getElementById('answer-sublabel').value = ''">Click me to erase answer</button>
-</div>
+#}
+
 
 
 
