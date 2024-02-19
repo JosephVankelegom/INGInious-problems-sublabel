@@ -5,42 +5,59 @@
 <div class="form-group row">
     <label for="header-PID" class="col-sm-2 control-label">Context</label>
     <div class="col-sm-10">
-        <textarea id="header-sublabel" class="form-control" name="problem[sublabel][header]"></textarea>
+        <textarea id="header-PID" class="form-control" name="problem[PID][header]"></textarea>
+        <button id="highlight_button"> highlight </button>
     </div>
 </div>
 
 <div class="form-group row">
-    <label for="Code-PID" class="col-sm-2 control-label">Code</label>
-    <textarea id="codeTest" class="codeTest"></textarea>
+    <label for="answer-PID" class="col-sm-2 control-label">Answer</label>
+    <div class="col-sm-10">
+        <input type="text" class="form-control" id="answer-PID" name="problem[PID][answer]" placeholder="Leave empty for Docker assessment"/>
+    </div>
+</div>
+
+
+<div class="form-group row">
+    <label for="codeTest-PID" class="col-sm-2 control-label">Code</label>
+    <textarea id="codeTest-PID" class="codeTest" name="problem[PID][codeTest]">{{ codeTest }}</textarea>
     <button id="eraseButton" type="button">Click me to erase answer</button>
 </div>
 <div class="form-group row">
-    <label for="Values-PID" class="col-sm-2 control-label">Values</label>
-    <textarea id="values" class="codeTest"></textarea>
+    <label for="values-PID" class="col-sm-2 control-label">Values</label>
+    <textarea id="values-PID" class="codeTest" name="problem[PID][values]"></textarea>
     <button id="updateValues" type="button">Click me to update values</button>
 </div>
 
+
+
 <script>
     $(document).ready(function() {
-        let highlightValueArray = [];
-        $('#codeTest').highlightWithinTextarea({ highlight: highlightValueArray });
+
+        let highlightValueArray = []; // indexes of highlighted text is situated.
+        let textarea = $('#codeTest-PID')
+        textarea.highlightWithinTextarea({ highlight: highlightValueArray });
+
         function updateValues() {
-            let textarea = $('#codeTest')
             textarea.highlightWithinTextarea('destroy');
             textarea.highlightWithinTextarea({ highlight: highlightValueArray });
-
+            document.getElementById("answer-PID").value= highlightValueArray.toString();
         }
 
 
-
-
-        document.getElementById('eraseButton').addEventListener('mousedown', function() {
-            const codeAreaval = document.getElementById('codeTest');
+        document.getElementById('highlight_button').addEventListener('mousedown', function() {
+            const codeAreaval = document.getElementById('codeTest-PID');
             let selS = codeAreaval.selectionStart;
             let selE = codeAreaval.selectionEnd;
             highlightValueArray.push([selS,selE]);
+            highlightValueArray.sort()
             updateValues();
 
+        })
+
+        document.getElementById('eraseButton').addEventListener('click', function () {
+            highlightValueArray=[]
+            updateValues()
         })
         {# $('#eraseButton').on("mousedown",updateValues); #}
 

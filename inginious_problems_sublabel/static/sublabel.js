@@ -1,6 +1,5 @@
 
 
-let highlightArray = [];
 function load_input_sublabel(submissionid, key, input) {
     var field = $("form#task input[name='" + key + "']");
     if(key in input)
