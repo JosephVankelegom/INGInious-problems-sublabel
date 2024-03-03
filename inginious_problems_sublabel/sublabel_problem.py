@@ -17,7 +17,7 @@ class SublabelProblem(Problem):
         Problem.__init__(self, problemid, content, translations, taskfs)
         self._header = content['header'] if "header" in content else ""
         self._answer = str(content.get("answer", ""))
-        self._codeTest = str(content.get("codeTest", ""))
+        self._code = content['code'] if "code" in content else ""
 
 
     @classmethod
@@ -43,7 +43,7 @@ class SublabelProblem(Problem):
     @classmethod
     def get_text_fields(cls):
         fields = Problem.get_text_fields()
-        fields.update({"header": True, "codeTest": True})
+        fields.update({"header": True, "code": True, "answer": True})
         return fields
 
 
@@ -61,9 +61,10 @@ class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
         """ Show SublabelProblem, student side """
         header = ParsableText(self.gettext(language, self._header), "rst",
                               translation=self.get_translation_obj(language))
+        code = self._code
 
         return template_helper.render("sublabel.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id(),
-                                      header=header, )
+                                      header=header, code=code)
 
     @classmethod
     def show_editbox(cls, template_helper, key, language):
@@ -72,5 +73,5 @@ class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
 
     @classmethod
     def show_editbox_templates(cls, template_helper, key, language):
-        return ""#template_helper.render("sublabel_edit_templates.html", template_folder=PATH_TO_TEMPLATES, key=key)
+        return template_helper.render("sublabel_edit_templates.html", template_folder=PATH_TO_TEMPLATES, key=key)
 #####template_helper.render("sublabel_edit_templates.html", template_folder=PATH_TO_TEMPLATES, key=key)

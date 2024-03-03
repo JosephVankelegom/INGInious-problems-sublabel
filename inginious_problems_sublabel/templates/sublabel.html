@@ -1,11 +1,12 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
+{{ header | safe }}
 
 <div class="form-group row">
-    <label for="header-PID"></label>
+    <label for="code-PID"></label>
     <div class="col-sm-10">
-        <textarea id="header-PID" name="problem[PID][header]">{{ header }}</textarea>
+        <textarea id="code-PID" name="problem[PID][code]" readonly>{{ code }}</textarea>
         <button id="highlight_button" type="button"> highlight </button>
         <button id="eraseButton" type="button">Click me to erase answer</button>
     </div>
@@ -13,10 +14,11 @@
 <input id="answer" type="text" name="{{inputId}}" value="" class="monospace form-control"/>
 
 <script>
+
     $(document).ready(function() {
 
         let highlightValueArray = []; // indexes of highlighted text is situated.
-        let textarea = $('#header-PID')
+        let textarea = $('#code-PID')
         textarea.highlightWithinTextarea({ highlight: highlightValueArray });
 
         function updateValues() {
@@ -27,7 +29,7 @@
 
 
         document.getElementById('highlight_button').addEventListener('mousedown', function() {
-            const codeAreaval = document.getElementById('header-PID');
+            const codeAreaval = document.getElementById('code-PID');
             let selS = codeAreaval.selectionStart;
             let selE = codeAreaval.selectionEnd;
             highlightValueArray.push([selS,selE]);

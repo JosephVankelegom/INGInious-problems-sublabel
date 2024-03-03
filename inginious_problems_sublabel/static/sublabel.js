@@ -1,4 +1,9 @@
 
+let numberOfLabels = 3;
+let highlightValueArray =[[[]],[[]],[[]]]; // indexes of highlighted text is situated.
+let ListIdLabels =[]
+
+
 
 function load_input_sublabel(submissionid, key, input) {
     var field = $("form#task input[name='" + key + "']");
@@ -12,107 +17,158 @@ function studio_init_template_sublabel(well, pid, problem)
 {
     if("answer" in problem)
         $('#answer-' + pid, well).val(problem["answer"]);
+    if("code" in problem)
+        $('#code-' + pid, well).val(problem["code"]);
+    startPage(well, pid, problem)
+    contextMenuStart(well, pid, problem)
 }
 
 function load_feedback_sublabel(key, content) {
     load_feedback_code(key, content);
 }
 
+function startPage(well, pid, problem) {
+
+    let textarea = $('#code-' + pid, well)
+    createHighlightTextarea()
+
+    function createHighlightTextarea(){
+        if(numberOfLabels === 1){textarea.highlightWithinTextarea({ highlight:
+                highlightValueArray[0], className:'yellow'});}
+        if(numberOfLabels === 2){textarea.highlightWithinTextarea({ highlight:[
+            {highlight: highlightValueArray[0], className: 'yellow'},
+            {highlight: highlightValueArray[1], className: 'blue'}]});}
+        if(numberOfLabels === 3){textarea.highlightWithinTextarea({ highlight:[
+            {highlight: highlightValueArray[0], className: 'yellow'},
+            {highlight: highlightValueArray[1], className: 'blue'},
+            {highlight: highlightValueArray[2], className: 'red'}]});}
+    }
+
+    function updateValues() {
+        console.log("updateValue javascript")
+        textarea.highlightWithinTextarea('destroy');
+        createHighlightTextarea()
+        $('#answer-' + pid).val( "label 1: " + highlightValueArray[0].toString()+"   label 2: " + highlightValueArray[1].toString()+"   label 3: " + highlightValueArray[2].toString());
+    }
+
+    $('#highlight_button').on('mousedown', function() {
+        console.log("Ligne 48 javascript")
+        const codeAreaval = document.getElementById('code-' + pid);
+        let selS = codeAreaval.selectionStart;
+        let selE = codeAreaval.selectionEnd;
+        highlightValueArray[0] = updateArray(selS,selE, highlightValueArray[0]);
+        updateValues();
+
+    })
+
+    $('#highlight_button2').on('mousedown', function() {
+        console.log("Ligne 58 javascript")
+        const codeAreaval = document.getElementById('code-' + pid);
+        let selS = codeAreaval.selectionStart;
+        let selE = codeAreaval.selectionEnd;
+        highlightValueArray[1] = updateArray(selS,selE, highlightValueArray[1]);
+        updateValues();
+
+    })
+
+    $('#highlight_button3').on('mousedown', function() {
+        console.log("Ligne 68 javascript")
+        const codeAreaval = document.getElementById('code-' + pid);
+        let selS = codeAreaval.selectionStart;
+        let selE = codeAreaval.selectionEnd;
+        highlightValueArray[2] = updateArray(selS,selE, highlightValueArray[2]);
+        updateValues();
+    })
+
+    console.log("Before event listener registration");
+
+    $('#eraseButton').on('click', function() {
+        console.log("Ligne 78 javascript")
+        highlightValueArray=[[[]],[[]],[[]]]
+        updateValues()
+    })
+
+    function updateArray(start, end, array){
+        let result = array.flat();
+
+        let indexStart  = result.findIndex(function(value){return value>=start}) // rajouter si plus grand que tout etc
+        let indexEnd    = result.findIndex(function(value){return value>=end})
+        if(indexStart   === -1){indexStart = result.length}
+        if(indexEnd     === -1){indexEnd = result.length}
+        let usefulStart = (indexStart%2) === 0
+        let usefulEnd   = (indexEnd%2) === 0
 
 
-/*$(document).on('mouseup','textarea',function(){
-    var selectedText = getSelectionText(this);
-    $("#debug").html(selectedText);
-})
+        if(indexStart === result.length){
+            console.log(start, indexStart, "enter indexStart max")
+            result = result.concat([start, end])}
+        else if(indexEnd === 0){
+            console.log("enter indexEnd min")
+            result = [start, end].concat(result)}
 
-$('#input').highlightWithinTextarea({
-    highlight: 'a' // string, regexp, array, function, or custom object
-});
-*/
-
-
-function getSelectionText(textarea){
-    var text = "";
-
-    if(window.getSelection){
-        try{
-            return window.getSelection().getRangeAt(0).toString();
+        else if(usefulStart && usefulEnd){
+            result.splice(indexStart,indexEnd-indexStart,start,end)
         }
-        catch (e) {
+        else if(usefulStart && !usefulEnd){
+            result.splice(indexStart,indexEnd-indexStart,start)
         }
-        try{
-            return window.getSelection().toString();
+        else if(!usefulStart && usefulEnd){
+            result.splice(indexStart,indexEnd-indexStart,end)
         }
-        catch (e) {
+        else{
+            result.splice(indexStart,indexEnd-indexStart)
         }
-    }
-    try{   // for textarea.
-        var start = textarea.selectionStart;
-        var finish = textarea.selectionEnd;
-        return textarea.value.substring(start,finish);
-    }
-    catch (e) {
-    }
-    return "ERROR";
-}
 
-function getIndexStartSelection(textarea){   // maybe save the value for correction ?
-    return textarea.selectionStart;
-}
-function getIndexEndSelection(textarea){
-    return textarea.selectionEnd;
-}
+        let resultFormat = []
+        while (result.length) resultFormat.push(result.splice(0,2));
+        return resultFormat;
 
-function highlightFromIndexes(textarea){
-    var inputText = document.getElementById("codeHighlight");
-    var innerHTML = inputText.innerHTML;  // Use value property instead of innerHTML
-    var start   = getIndexStartSelection(textarea);
-    var end     = getIndexEndSelection(textarea);
-    var answerText = document.getElementById("answer-sublabel").value;
-    document.getElementById("answer-sublabel").value = start.toString()+ end.toString() + answerText;
-    if (start=>0 && start < end ) {    // CONDITION DE FIN Et CHECK SI BUG AVEC DIFF!!!
-        innerHTML = innerHTML.substring(0, start) + "<span class='highlight'>" + innerHTML.substring(start, end) + "</span>" + innerHTML.substring(end);
-        inputText.innerHTML = innerHTML;  // Use value property instead of innerHTML
-    }
-}
-function highlight(text) {
-    //var text = getSelectionText("codeHighlight");
-    var inputText = document.getElementById("codeHighlight");
-    var innerHTML = inputText.innerHTML;  // Use value property instead of innerHTML
-    var index = innerHTML.indexOf(text);
-    if (index >= 0) {
-        innerHTML = innerHTML.substring(0, index) + "<span class='highlight'>" + innerHTML.substring(index, index + text.length) + "</span>" + innerHTML.substring(index + text.length);
-        inputText.innerHTML = innerHTML;  // Use value property instead of innerHTML
-    }
-}
-
-function updateText(){
-    var inputText = document.getElementById("codeInput-sublabel").value;
-    document.getElementById("codeHighlight").textContent = inputText;
-}
-
-function showSelection(textarea){
-    document.getElementById("testSelection").textContent = getSelectionText(textarea);
-}
-
-
-/*$(document).ready(function() {
-
-    $('#codeTest').highlightWithinTextarea({highlight: highlightArray});
-
-    window.addSelectionToArray = function(){
-        let indexStart = getIndexStartSelection('codeTest')
-        let indexEnd = getIndexEndSelection('codeTest')
-        highlightArray.push([indexStart,indexEnd]);
-        let codeArea =  $('#codeTest')
-        codeArea.highlightWithinTextarea('update');
-        console.log('Selection added:', highlightArray);
-    }
-    window.eraseArray = function(){
-        highlightArray = [];
-        console.log('Array erased:', highlightArray);
     }
 
-    $('#codeTest').keyup(addSelectionToArray);
-    $('#eraseButton').on("click",eraseArray);
-});*/
+    function createLabel(){
+
+        var labelName = document.createElement("input");
+        labelName.setAttribute("type", "text")
+        labelName.setAttribute("id", getNewLabelId().toString())
+        labelName.setAttribute("placeholder", "Label name")
+        document.getElementById('labelDiv').appendChild(labelName)
+    }
+
+    /**
+     * @return {Number}
+     */
+    function getNewLabelId() {
+        let result = 0;
+        if(ListIdLabels.length > 0){
+            result = ListIdLabels[ListIdLabels.length-1]+1
+        }
+        ListIdLabels.push(result)
+        return result
+    }
+    $('#addLabel').on('click', createLabel)
+
+    $('#TestButton').on('click', function() {
+        console.log($('#'+'1').val())
+    })
+}
+function contextMenuStart(well, pid, problem) {
+    var context = $('#code-PID')
+    var contextMenu = $('#context-menu')
+    document.addEventListener("contextmenu", function (e) {
+        e.preventDefault()
+
+        contextMenu.css({
+            display: "block",
+            left: event.clientX -280 + "px",
+            top: event.clientY  +200 + "px"
+        });
+    })
+    document.addEventListener("click", function (event){
+        contextMenu.css({
+            "display": "none"
+        })
+    });
+    $("option1").on("click", function(){
+        alert("Option 1 bg whaaa")
+    })
+}
