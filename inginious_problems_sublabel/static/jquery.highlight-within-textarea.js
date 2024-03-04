@@ -4,7 +4,7 @@
  * @author  Will Boyd
  * @github  https://github.com/lonekorean/highlight-within-textarea
  *
- *
+ * Licence MIT
  */
 
 (function($) {

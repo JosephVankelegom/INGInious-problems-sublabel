@@ -18,6 +18,9 @@ class SublabelProblem(Problem):
         self._header = content['header'] if "header" in content else ""
         self._answer = str(content.get("answer", ""))
         self._code = content['code'] if "code" in content else ""
+        self._labels_id = content['label_id'] if "label_id" in content else ""
+        self._labels_color = content['label_color'] if "label_color" in content else ""
+        self._labels_value = content['label_value'] if "label_value" in content else ""
 
 
     @classmethod
