@@ -1,49 +1,63 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
+<style>
+
+    /* Define here the variable color and reuse them everywhere, better code ...*/
+
+
+
+</style>
+
+<script type="text/javascript">
+    var dataExercise = {{ data|safe }}
+</script>
 
 {{ header | safe }}
 
 <div class="form-group row">
-    <label for="code-PID"></label>
+    <label for="code-PID" class="col-sm-2 " readonly></label>
     <div class="col-sm-10">
-        <textarea id="code-PID" name="problem[PID][code]" readonly>{{ code }}</textarea>
-        <button id="highlight_button" type="button"> highlight </button>
-        <button id="eraseButton" type="button">Click me to erase answer</button>
+        <textarea id="code-PID" class="form-control" name="problem[PID][code]"
+                                     oninput='this.style.height= ""; this.style.height = this.scrollHeight + "px"' on
+                                     style="width: 1044px; min-height: 150px; border-color: darkgray; padding-left: 35px;"  readonly>{{ code }}</textarea>
     </div>
 </div>
-<input id="answer" type="text" name="{{inputId}}" value="" class="monospace form-control"/>
+
+<div class="form-group row">
+
+    <div class="col-sm-10">
+    </div>
+    <div class="form-row" id="labelDiv">
+</div>
+
+
+<input id="answer-PID" type="text" name="{{inputId}}" value="" class="monospace form-control"/>
+
+
+<div id="context-menu" class="context-menu">
+    <ul id="list_context-menu"></ul>
+</div>
+</div>
+<div id="context-menu" class="context-menu">
+    <ul id="list_context-menu"></ul>
+</div>
 
 <script>
+    $(document).ready()
+    {
 
-    $(document).ready(function() {
-
-        let highlightValueArray = []; // indexes of highlighted text is situated.
         let textarea = $('#code-PID')
-        textarea.highlightWithinTextarea({ highlight: highlightValueArray });
+        let answerarea = $('#answer-PID')
+        startStudent(textarea, answerarea)
+        contextMenuStart()
 
-        function updateValues() {
-            textarea.highlightWithinTextarea('destroy');
-            textarea.highlightWithinTextarea({ highlight: highlightValueArray });
-            document.getElementById("answer").value= highlightValueArray.toString();
+        for (const [id, value] of Object.entries(dataExercise)) {
+            createLabelText(id, textarea, value["color"], true)
+            createLabelStudent(id,value["label"],value["color"], textarea, answerarea)
+            set_contextName(id,value["label"])
+            set_labelNameID(id,value[["label"]])
         }
 
 
-        document.getElementById('highlight_button').addEventListener('mousedown', function() {
-            const codeAreaval = document.getElementById('code-PID');
-            let selS = codeAreaval.selectionStart;
-            let selE = codeAreaval.selectionEnd;
-            highlightValueArray.push([selS,selE]);
-            highlightValueArray.sort()
-            updateValues();
-
-        })
-
-        document.getElementById('eraseButton').addEventListener('click', function () {
-            highlightValueArray=[]
-            updateValues()
-        })
-        {# $('#eraseButton').on("mousedown",updateValues); #}
-
-
-    });
+    }
 </script>

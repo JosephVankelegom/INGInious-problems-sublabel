@@ -1,3 +1,4 @@
+import json
 import os.path
 
 from inginious.common.tasks_problems import Problem
@@ -18,9 +19,6 @@ class SublabelProblem(Problem):
         self._header = content['header'] if "header" in content else ""
         self._answer = str(content.get("answer", ""))
         self._code = content['code'] if "code" in content else ""
-        self._labels_id = content['label_id'] if "label_id" in content else ""
-        self._labels_color = content['label_color'] if "label_color" in content else ""
-        self._labels_value = content['label_value'] if "label_value" in content else ""
 
 
     @classmethod
@@ -50,6 +48,13 @@ class SublabelProblem(Problem):
         return fields
 
 
+def parse_answer_student(answer):
+    data = json.loads(answer)
+    for key in data:
+        data[key].pop("values")
+    return data
+
+
 class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
     """ A displayable sublabel problem """
 
@@ -65,9 +70,9 @@ class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
         header = ParsableText(self.gettext(language, self._header), "rst",
                               translation=self.get_translation_obj(language))
         code = self._code
-
+        data = json.dumps(parse_answer_student(self._answer))
         return template_helper.render("sublabel.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id(),
-                                      header=header, code=code)
+                                      header=header, code=code, data=data)
 
     @classmethod
     def show_editbox(cls, template_helper, key, language):
@@ -77,4 +82,4 @@ class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
     @classmethod
     def show_editbox_templates(cls, template_helper, key, language):
         return template_helper.render("sublabel_edit_templates.html", template_folder=PATH_TO_TEMPLATES, key=key)
-#####template_helper.render("sublabel_edit_templates.html", template_folder=PATH_TO_TEMPLATES, key=key)
+
