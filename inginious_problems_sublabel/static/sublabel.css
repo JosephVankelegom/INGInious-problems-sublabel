@@ -82,3 +82,7 @@
 .hwt-content mark.yellow-red{
     background: linear-gradient(to top, var(--red) 0%, var(--red) 50%, var(--yellow) 50%, var(--yellow) 100%) ;
 }
+
+.hwt-content mark.red-green{
+    background: linear-gradient(to top, var(--green) 0%, var(--green) 50%, var(--red) 50%, var(--red) 100%) ;
+}
