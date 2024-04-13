@@ -18,8 +18,8 @@ function studio_init_template_sublabel(well, pid, problem)
     let labelNameID = {}
     let highlightColor = {}
     let highlightValue = {}
+    let textareasize = 0;
 
-    let exercice = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well);
 
     if("answer" in problem && problem["answer"] !== ""){
 
@@ -33,11 +33,15 @@ function studio_init_template_sublabel(well, pid, problem)
         }
     }
 
-    if("code" in problem)
-        $('#code-' + pid, well).val(problem["code"]);
+    if("code" in problem){
+        textarea.val(problem["code"]);
+        textareasize = problem["code"].length
+    }
 
+
+    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize);
     contextMenuStart(textarea, pid, well)
-    exercice.startTeacher();
+    exercise.startTeacher();
 }
 
 function load_feedback_sublabel(key, content) {
@@ -45,7 +49,8 @@ function load_feedback_sublabel(key, content) {
 }
 
 class SubLabel{
-    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well) {
+
+    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize) {
         this.pid            = pid
         this.well           = well
         this.textarea       = textarea;
@@ -53,6 +58,7 @@ class SubLabel{
         this.highlightValue = highlightValue;
         this.labelNameID    = labelNameID;
         this.highlightColor = highlightColor;
+        this.textareasize   = textareasize
     }
 
     startTeacher() {
@@ -65,7 +71,7 @@ class SubLabel{
 
 
         this.createHighlightTextarea()
-        this.createEraseContext(this.pid)
+        this.createEraseContext(this.pid, this.well)
 
         $('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
 
@@ -81,13 +87,31 @@ class SubLabel{
                 // put caret at right position again
                 this.selectionStart =
                     this.selectionEnd = start+1;
+
+                //that.updateValues()
             }
+        })
+
+        var that = this;
+        this.textarea.on('input', function(e){
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+            const indent = that.updateIndexesOnInput(start, end);
         })
     }
 
     startStudent(){
+
+
+        for(let id in this.labelNameID){
+            this.createLabelText(id, this.highlightColor[id], true, this.pid, this.well)
+            this.createLabelContext(id, this.pid, this.well)
+            this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
+        }
+
+
         this.createHighlightTextarea()
-        this.createEraseContext()
+        this.createEraseContext(this.pid, this.well)
     }
 
     /**
@@ -125,14 +149,17 @@ class SubLabel{
     }
 
     eraseLabelTeacher(id){
-        delete this.labelNameID[id]
-        delete this.highlightColor[id]
-        delete this.highlightValue[id]
-        $("#label-text_" + id+"-"+this.pid, this.well).remove()
-        $("#checkbox_" + id+"-"+this.pid, this.well).remove()
-        $("#context-menu_" + id+"-"+this.pid, this.well).remove()
-        $("#erase-label_" + id+"-"+this.pid, this.well).remove()
-        this.updateValues()
+        let result = confirm("Press OK to erase the label");
+        if(result){
+            delete this.labelNameID[id]
+            delete this.highlightColor[id]
+            delete this.highlightValue[id]
+            $("#label-text_" + id+"-"+this.pid, this.well).remove()
+            $("#checkbox_" + id+"-"+this.pid, this.well).remove()
+            $("context-menu-item_" + id+"-"+this.pid, this.well).remove()
+            $("#erase-label_" + id+"-"+this.pid, this.well).remove()
+            this.updateValues()
+        }
     }
 
     createLabelStudent(id, name, color){
@@ -144,7 +171,7 @@ class SubLabel{
 
     createLabelContext(id, pid, well){
         var li = document.createElement("li");
-        li.setAttribute("id", "context-menu-item_" + pid+"_"+id);
+        li.setAttribute("id", "context-menu-item_" + id+"-"+pid);
         li.onclick =  ()=> {this.highlightSelection(id)}
         var ul = $("#context-menu-ul-"+pid, well);
         ul.append(li);
@@ -203,7 +230,7 @@ class SubLabel{
     }
 
     set_contextName(id,name, pid, well){ // TODO a changer danger PID pas bien écrit
-        let li = document.getElementById("context-menu-item_" +pid+"_"+id);
+        let li = document.getElementById("context-menu-item_" +id+"-"+pid);
         li.textContent = name;
     }
 
@@ -426,6 +453,24 @@ class SubLabel{
         return result;
     }
 
+    updateIndexesOnInput(start, end){
+        let newSize = this.textarea.val().length
+        const indent = newSize-this.textareasize
+        let ids = Object.keys(this.highlightValue)
+        for(let j in ids){
+            let id = ids[j]
+            let array = this.highlightValue[id];
+            for(let i = 0; i < array.length; i++){
+                if(array[i][0]>end){array[i][0]+=indent}
+                if(array[i][1]>end){array[i][1]+=indent}
+            }
+            this.highlightValue[id] = array;
+        }
+        this.textareasize = newSize;
+        //this.updateValues();
+        return indent;
+    }
+
 
 
 
@@ -473,20 +518,4 @@ function lengthDict(dictionary){
     }
     return count
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

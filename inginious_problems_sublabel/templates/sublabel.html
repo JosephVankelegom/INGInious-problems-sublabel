@@ -15,48 +15,45 @@
 {{ header | safe }}
 
 <div class="form-group row">
-    <label for="code-PID" class="col-sm-2 " readonly></label>
-    <div class="col-sm-10">
-        <textarea id="code-PID" class="form-control" name="problem[PID][code]"
-                                     oninput='this.style.height= ""; this.style.height = this.scrollHeight + "px"' on
-                                     style="width: 1044px; min-height: 150px; border-color: darkgray; padding-left: 35px;"  readonly>{{ code }}</textarea>
+    <label for="code-{{inputId}}" class="col-sm-2 "></label>
+    <div class="col-sm-10"><textarea id="code-{{inputId}}" class="form-control"
+                                     oninput='this.style.height= ""; this.style.height = this.scrollHeight + "px"'
+                                     style="width: 1044px; min-height: 150px; border-color: darkgray; padding-left: 35px;"  >{{ code | safe }}</textarea>
     </div>
 </div>
 
+<div class="form-row" id="label-div-{{ inputId }}">
+</div>
 <div class="form-group row">
-
+    <label for="answer-{{ inputId }}" class="col-sm-2 control-label"></label>
     <div class="col-sm-10">
+        <input type="text" class="form-control" id="answer-{{ inputId }}" name="problem[PID][answer]"/>
     </div>
-    <div class="form-row" id="labelDiv">
 </div>
 
 
-<input id="answer-PID" type="text" name="{{inputId}}" value="" class="monospace form-control"/>
-
-
-<div id="context-menu" class="context-menu">
-    <ul id="list_context-menu"></ul>
-</div>
-</div>
-<div id="context-menu" class="context-menu">
-    <ul id="list_context-menu"></ul>
+<div id="context-menu-{{inputId}}" class="context-menu">
+    <ul id="context-menu-ul-{{inputId}}"></ul>
 </div>
 
 <script>
     $(document).ready()
     {
 
-        let textarea = $('#code-PID')
-        let answerarea = $('#answer-PID')
-        contextMenuStart()
+        let textarea = $("#code-{{inputId}}")
+        let answerarea = $("#answer-{{inputId}}")
+        let highlightValue = {};
+        let labelNameID = {};
+        let highlightColor = {};
 
         for (const [id, value] of Object.entries(dataExercise)) {
-            createLabelText(id, textarea, value["color"], true)
-            createLabelStudent(id,value["label"],value["color"], textarea, answerarea)
-            set_contextName(id,value["label"])
-            set_labelNameID(id,value[["label"]])
+            labelNameID[id] = value["label"];
+            highlightColor[id] = value["color"];
         }
 
+        let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, "{{ inputId }}", null, 0);
+        contextMenuStart(textarea, "{{ inputId }}", null)
+        exercise.startStudent();
 
 
     }
