@@ -31,7 +31,9 @@
 }
 
 .hwt-content{
+    padding-top: 3px;
     padding-left: 35px;
+
 }
 
 .hwt-content mark.blue{

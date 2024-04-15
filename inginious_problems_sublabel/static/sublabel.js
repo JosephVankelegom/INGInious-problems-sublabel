@@ -1,13 +1,17 @@
 
 let colors = ['yellow', 'blue', 'red', 'green']
-
+const eventReload = new CustomEvent("reloadAll");
 
 function load_input_sublabel(submissionid, key, input) {
     var field = $("form#task input[name='" + key + "']");
-    if(key in input)
+    if(key in input){
         $(field).prop('value', input[key]);
+        $(field).trigger('change')
+    }
+
     else
         $(field).prop('value', "");
+
 }
 
 function studio_init_template_sublabel(well, pid, problem)
@@ -39,7 +43,7 @@ function studio_init_template_sublabel(well, pid, problem)
     }
 
 
-    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize);
+    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher");
     contextMenuStart(textarea, pid, well)
     exercise.startTeacher();
 }
@@ -50,7 +54,7 @@ function load_feedback_sublabel(key, content) {
 
 class SubLabel{
 
-    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize) {
+    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize, side) {
         this.pid            = pid
         this.well           = well
         this.textarea       = textarea;
@@ -59,6 +63,7 @@ class SubLabel{
         this.labelNameID    = labelNameID;
         this.highlightColor = highlightColor;
         this.textareasize   = textareasize
+        this.side           = side;
     }
 
     startTeacher() {
@@ -112,6 +117,21 @@ class SubLabel{
 
         this.createHighlightTextarea()
         this.createEraseContext(this.pid, this.well)
+
+        this.answerarea.on('change', () => {
+            let answer = this.answerarea.val();
+            if(answer === ""){return}
+            answer = JSON.parse(answer);
+            this.labelNameID = {};
+            this.highlightValue = {};
+            this.highlightColor = {};
+            for(let id in answer){
+                this.labelNameID[id] = answer[id]["label"];
+                this.highlightColor[id] = answer[id]["color"]
+                this.highlightValue[id] = answer[id]["values"]
+            }
+            this.createHighlightTextarea()
+        })
     }
 
     /**
@@ -123,7 +143,7 @@ class SubLabel{
         // check the display box is checked
         let highlightValueChecked = {};
         for(const [id, value]  of Object.entries(this.highlightValue)){
-            if(this.isBoxChecked(id)){
+            if(this.isBoxChecked(id, this.pid, this.well)){
                 highlightValueChecked[id] = value
             }
         }
@@ -148,16 +168,17 @@ class SubLabel{
 
     }
 
-    eraseLabelTeacher(id){
+    eraseLabelTeacher(id, labelDiv){
         let result = confirm("Press OK to erase the label");
         if(result){
             delete this.labelNameID[id]
             delete this.highlightColor[id]
             delete this.highlightValue[id]
             $("#label-text_" + id+"-"+this.pid, this.well).remove()
-            $("#checkbox_" + id+"-"+this.pid, this.well).remove()
+            this.getCheckBox(id,this.pid,this.well).remove()
             $("context-menu-item_" + id+"-"+this.pid, this.well).remove()
             $("#erase-label_" + id+"-"+this.pid, this.well).remove()
+            labelDiv.remove()
             this.updateValues()
         }
     }
@@ -181,50 +202,110 @@ class SubLabel{
         var li = document.createElement("li");
         li.setAttribute("id", "context-menu-erase_"+pid);
         li.textContent = "erase"
-        li.onclick =  ()=> {this.highlightSelectionErase()}
+        li.onclick =  ()=> {this.highlightSelectionErase(pid, well)}
         var ul = $("#context-menu-ul-"+pid, well);
         ul.append(li);
     }
 
+
+    /***
+     * Create Label Input Field
+     * @param id
+     * @param color
+     * @param isReadonly
+     * @param pid
+     * @param well
+     */
     createLabelText(id, color, isReadonly, pid, well){
+
+        let labelDiv = $('#label-div-'+pid, well)
+        var outerDiv = document.createElement("label");
+        outerDiv.setAttribute("class", "input-group");
+
+
         var labelNameArea = document.createElement("input");
         labelNameArea.setAttribute("type", "text")
         labelNameArea.setAttribute("id", "label-text_"+id+"-"+pid)
         labelNameArea.setAttribute("placeholder", "Label name")
         labelNameArea.setAttribute("style", "background-color: var(--"+color+");")
+        labelNameArea.setAttribute("class", "form-control")
         if(isReadonly){labelNameArea.setAttribute("readonly", "true")}
         else{labelNameArea.oninput = ()=> {this.updateLabel(id, labelNameArea)}}
-        let labelDiv = $('#label-div-'+pid, well).append(labelNameArea)
-        this.createCheckBox(id, labelDiv, pid, well)
-        this.createEraseLabelButton(id, labelDiv, pid, well)
+
+
+
+        if(!isReadonly){
+            outerDiv.append(labelNameArea)
+            this.createCheckBox(id, outerDiv, pid, well);
+            this.createEraseLabelButton(id, outerDiv, pid, well);
+            labelDiv.append(outerDiv)
+        }
+        else {
+            labelDiv.append(labelNameArea)
+        }
+
+
+
     }
 
-        /**
-     * create a checkbox with id define as checkbox_{{id from label}}
+
+    updateLabel(id,labelNameArea) {
+        let new_name = labelNameArea.value;
+        this.set_labelNameID(id, new_name, this.pid, this.well);
+    }
+
+
+    /**
+     * create a checkbox that is linked to each label, with id define as checkbox_{{id from label}}-{{id of exercice}}
      * @param id = id of the label.
      * @param textarea where the text should be highlighted
      * @param labelNameArea is the input area where we set the label name
      */
     createCheckBox(id, labelDiv, pid, well){
+
+        var newDiv = document.createElement("div")
+        newDiv.setAttribute("class", "input-group-text")
+
         var checkBox = document.createElement("input")
         checkBox.setAttribute("type", "checkbox")
+        checkBox.setAttribute("class", "form-check-input")
         checkBox.setAttribute("id", "checkbox_" + id +"-"+pid);
-        checkBox.setAttribute("checked", "checked")
+        checkBox.setAttribute("checked", "checked");
+        checkBox.setAttribute("value", "")
         checkBox.onclick = ()=> {this.updateHighlightTextArea(this.highlightValue)}
-        labelDiv.append(checkBox)
+
+        newDiv.append(checkBox)
+        labelDiv.append(newDiv)
+
     }
 
-    createEraseLabelButton(id, labelDiv){
+
+    getCheckBox(id, pid, well){
+        return $("#checkbox_" + id +"-"+pid);
+    }
+    isBoxChecked(id,pid,well){
+        if(this.side === "student"){return true}
+        return this.getCheckBox(id,pid,well).is(":checked");
+    }
+
+
+    /**
+     * Create the Erase button that is linked to each label.
+     * @param id
+     * @param labelDiv
+     */
+    createEraseLabelButton(id, labelDiv, pid, well){
         var eraseLabel = document.createElement("button")
         eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid)
-        eraseLabel.innerHTML = "#"
-        eraseLabel.onclick = () => {this.eraseLabelTeacher(id,eraseLabel)}
+        eraseLabel.setAttribute("class", "btn btn-outline-secondary")
+        eraseLabel.innerHTML = '<img src="static/images/deleteLabelButton.png"/>'
+        eraseLabel.onclick = () => {this.eraseLabelTeacher(id,labelDiv)}
         labelDiv.append(eraseLabel)
     }
 
     set_labelNameID(id, name,pid, well){
         this.labelNameID[id] = name;
-        let area = $("#label-text_"+id+"-"+pid, well);
+        let area = $("#label-text_"+id+"-"+pid);
         area.val(name);
         this.set_contextName(id,name,pid, well);
     }
@@ -232,11 +313,6 @@ class SubLabel{
     set_contextName(id,name, pid, well){ // TODO a changer danger PID pas bien écrit
         let li = document.getElementById("context-menu-item_" +id+"-"+pid);
         li.textContent = name;
-    }
-
-    updateLabel(id,labelNameArea) {
-        let new_name = labelNameArea.value;
-        this.set_labelNameID(id, new_name, this.pid, this.well);
     }
 
     highlightSelection(label){
@@ -251,7 +327,7 @@ class SubLabel{
         let selS = this.textarea[0].selectionStart
         let selE = this.textarea[0].selectionEnd;
         for(const [id, value]  of Object.entries(this.highlightValue)){
-            if(this.isBoxChecked(id)){
+            if(this.isBoxChecked(id, pid, well)){
                 this.highlightValue[id] = this.removeFromArray(this.highlightValue[id],[Math.min(selS,selE),Math.max(selS,selE)])
             }
         }
@@ -272,20 +348,20 @@ class SubLabel{
         this.createHighlightTextarea()
     }
 
-    isBoxChecked(id,pid,well){
-        return $("#checkbox_"+id+"-"+this.pid, this.well).is(":checked");
-    }
+
 
     updateAnswerArea(){
         let ids = Object.keys(this.highlightValue);
-        let answer_format = "{"
+        let answerDic   = {}
         for(let i = 0; i<ids.length; i++){
             let id = ids[i];
-            answer_format += '"'+id+'"'+':{"label":"'+ this.labelNameID[id] +'","color":"'+ this.highlightColor[id] +'","values":' + JSON.stringify(this.highlightValue[id])+ '}'
-            if(i<ids.length-1){answer_format+=','}
+            answerDic[id] = {}
+            answerDic[id]["label"] = this.labelNameID[id];
+            answerDic[id]["color"] = this.highlightColor[id];
+            answerDic[id]["values"] = this.highlightValue[id];
         }
-        answer_format+='}'
-        this.answerarea.val(answer_format);
+
+        this.answerarea.val(JSON.stringify(answerDic));
     }
 
 
@@ -494,7 +570,7 @@ function contextMenuStart(textarea ,pid, well) {
 
     let newDiv = $('#context-menu-'+pid, well);
     document.addEventListener("contextmenu",  (e) => {
-        e.preventDefault()
+        //e.preventDefault()
 
         newDiv.css({
             display: "block",

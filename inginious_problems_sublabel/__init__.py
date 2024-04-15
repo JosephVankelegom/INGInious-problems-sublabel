@@ -91,6 +91,7 @@ class DisplayableDemoProblem(DemoProblem, DisplayableProblem):
 
 def init(plugin_manager, course_factory, client, plugin_config):
     # TODO: Replace by shared static middleware and let webserver serve the files
+    plugin_manager.add_page('/plugins/sublabel/static/images/<path:path>', StaticMockPage.as_view("sublabelimagespages"))
     plugin_manager.add_page('/plugins/sublabel/static/<path:path>', StaticMockPage.as_view("sublabelstaticpage"))
     plugin_manager.add_hook("css", lambda: "/plugins/sublabel/static/jquery.highlight-within-textarea.css")
     plugin_manager.add_hook("css", lambda: "/plugins/sublabel/static/sublabel.css")

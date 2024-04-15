@@ -7,6 +7,7 @@
 
 </style>
 
+
 <div class="form-group row">
     <label for="header-PID" class="col-sm-2 control-label">Context</label>
     <div class="col-sm-10">
@@ -14,18 +15,29 @@
     </div>
 </div>
 
+
 <div class="form-group row">
     <label for="code-PID" class="col-sm-2 ">Code</label>
-    <div class="col-sm-10"><textarea id="code-PID" class="form-control" name="problem[PID][code]"
-                                     oninput='this.style.height= ""; this.style.height = this.scrollHeight + "px"'
-                                     style="width: 1044px; min-height: 150px; border-color: darkgray; padding-left: 35px;"  ></textarea>
+    <div class="col-sm-10">
+        <textarea id="code-PID" class="form-control" name="problem[PID][code]"
+                  oninput='this.style.height= ""; this.style.height = this.scrollHeight + "px"'
+                  onclick='this.style.height= ""; this.style.height = this.scrollHeight + "px"'
+                  style="width: 1044px; min-height: 150px; border-color: darkgray; padding-left: 35px;"
+        ></textarea>
     </div>
 </div>
+
+
+
+
+<div class="row-cols-1" id="label-div-PID">
+</div>
+
 <div class="form-row" >
-    <button id="addLabel-PID" type="button">+</button>
+    <button id="addLabel-PID" type="button" class = "btn btn-outline-secondary" style="background-color: #ced4da; font-weight: bold" >+</button>
 </div>
-<div class="form-row" id="label-div-PID">
-</div>
+
+
 <div class="form-group row">
     <label for="answer-PID" class="col-sm-2 control-label"></label>
     <div class="col-sm-10">
@@ -38,8 +50,71 @@
     <ul id="context-menu-ul-PID"></ul>
 </div>
 
+{#
+<style>
+    /* Custom styles for the textarea container */
+    .textarea-container {
+      position: relative;
+    }
+
+    /* Custom styles for the line numbers */
+    .line-numbers {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px; /* Adjust as needed */
+      padding: 10px 5px;
+      font-family: monospace; /* Use monospace font for consistent character width */
+      text-align: right;
+      pointer-events: none; /* Ensure line numbers don't interfere with textarea */
+      border-right: 1px solid #ced4da; /* Add border to separate line numbers from textarea */
+    }
+
+    /* Custom styles for the textarea */
+    .custom-textarea {
+      padding: 10px;
+      padding-left: 50px; /* Add space for line numbers */
+      height: 300px;
+      border: 1px solid #ced4da; /* Bootstrap's default border color */
+      border-radius: 5px;
+      resize: vertical; /* Allow vertical resizing */
+      overflow: auto; /* Enable scrollbar if content overflows */
+    }
+  </style>
 
 
+<body>
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col">
+        <div class="textarea-container">
+          <div class="line-numbers"></div>
+          <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Optionally, you can add some JavaScript to generate line numbers dynamically
+    var textarea = document.getElementById('code-PID');
+    var lineNumbers = document.querySelector('.line-numbers');
+
+    // Generate line numbers
+    textarea.addEventListener('input', function() {
+      var lines = this.value.split('\n').length;
+      lineNumbers.innerHTML = '';
+      for (var i = 1; i <= lines; i++) {
+        lineNumbers.innerHTML += i + '<br>';
+      }
+    });
+
+    // Initial line numbers generation
+    textarea.dispatchEvent(new Event('input'));
+  </script>
+</body>
+#}
 
 
 
