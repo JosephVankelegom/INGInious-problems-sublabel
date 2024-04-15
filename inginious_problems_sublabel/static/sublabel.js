@@ -570,7 +570,7 @@ function contextMenuStart(textarea ,pid, well) {
 
     let newDiv = $('#context-menu-'+pid, well);
     document.addEventListener("contextmenu",  (e) => {
-        //e.preventDefault()
+        e.preventDefault()
 
         newDiv.css({
             display: "block",
