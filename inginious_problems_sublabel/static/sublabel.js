@@ -93,7 +93,7 @@ class SubLabel{
                 this.selectionStart =
                     this.selectionEnd = start+1;
 
-                //that.updateValues()
+                that.updateValues()
             }
         })
 
@@ -102,7 +102,31 @@ class SubLabel{
             var start = this.selectionStart;
             var end = this.selectionEnd;
             const indent = that.updateIndexesOnInput(start, end);
+            //that.updateValues()
         })
+
+        var textarea = this.textarea
+        var lineNumbers = $("#line_code-" + this.pid);
+
+        // Generate line numbers
+        textarea.on('input', function() {
+          var lines = this.value.split('\n').length;
+          lineNumbers.html('')
+          for (var i = 1; i <= lines; i++) {
+            lineNumbers.html(lineNumbers.html()+ i + '<br>')
+          }
+        });
+
+        textarea.on('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+        textarea.on('click', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+            textarea.trigger('input');
+        });
+        // Initial line numbers generation
     }
 
     startStudent(){
@@ -219,9 +243,9 @@ class SubLabel{
     createLabelText(id, color, isReadonly, pid, well){
 
         let labelDiv = $('#label-div-'+pid, well)
-        var outerDiv = document.createElement("label");
-        outerDiv.setAttribute("class", "input-group");
 
+        var inputGroupDiv = document.createElement("div")
+        inputGroupDiv.setAttribute("class", "input-group mb-3");
 
         var labelNameArea = document.createElement("input");
         labelNameArea.setAttribute("type", "text")
@@ -232,19 +256,11 @@ class SubLabel{
         if(isReadonly){labelNameArea.setAttribute("readonly", "true")}
         else{labelNameArea.oninput = ()=> {this.updateLabel(id, labelNameArea)}}
 
+        this.createCheckBox(id, inputGroupDiv, pid, well);
+        inputGroupDiv.append(labelNameArea);
+        this.createEraseLabelButton(id, inputGroupDiv, pid, well);
 
-
-        if(!isReadonly){
-            outerDiv.append(labelNameArea)
-            this.createCheckBox(id, outerDiv, pid, well);
-            this.createEraseLabelButton(id, outerDiv, pid, well);
-            labelDiv.append(outerDiv)
-        }
-        else {
-            labelDiv.append(labelNameArea)
-        }
-
-
+        labelDiv.append(inputGroupDiv)
 
     }
 
@@ -263,19 +279,22 @@ class SubLabel{
      */
     createCheckBox(id, labelDiv, pid, well){
 
-        var newDiv = document.createElement("div")
-        newDiv.setAttribute("class", "input-group-text")
+        var inputPrependDiv = document.createElement("div")
+        inputPrependDiv.setAttribute("class", "input-group-prepend")
+
+        var inputTextDiv = document.createElement("div")
+        inputTextDiv.setAttribute("class", "input-group-text")
 
         var checkBox = document.createElement("input")
         checkBox.setAttribute("type", "checkbox")
-        checkBox.setAttribute("class", "form-check-input")
         checkBox.setAttribute("id", "checkbox_" + id +"-"+pid);
         checkBox.setAttribute("checked", "checked");
-        checkBox.setAttribute("value", "")
+        checkBox.setAttribute("name", "checkbox");
         checkBox.onclick = ()=> {this.updateHighlightTextArea(this.highlightValue)}
 
-        newDiv.append(checkBox)
-        labelDiv.append(newDiv)
+        labelDiv.append(inputPrependDiv)
+        inputPrependDiv.append(inputTextDiv)
+        inputTextDiv.append(checkBox)
 
     }
 
@@ -295,12 +314,21 @@ class SubLabel{
      * @param labelDiv
      */
     createEraseLabelButton(id, labelDiv, pid, well){
-        var eraseLabel = document.createElement("button")
-        eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid)
+
+        var inputGroupDiv = document.createElement("div");
+        inputGroupDiv.setAttribute("class", "input-group-append");
+
+        var eraseLabel = document.createElement("button");
+        eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid);
         eraseLabel.setAttribute("class", "btn btn-outline-secondary")
-        eraseLabel.innerHTML = '<img src="static/images/deleteLabelButton.png"/>'
         eraseLabel.onclick = () => {this.eraseLabelTeacher(id,labelDiv)}
-        labelDiv.append(eraseLabel)
+
+        var iconTrash = document.createElement("i");
+        iconTrash.setAttribute("class", "fa fa-lg fa-trash-o");
+
+        inputGroupDiv.append(eraseLabel);
+        eraseLabel.append(iconTrash);
+        labelDiv.append(eraseLabel);
     }
 
     set_labelNameID(id, name,pid, well){
@@ -546,6 +574,8 @@ class SubLabel{
         //this.updateValues();
         return indent;
     }
+
+
 
 
 

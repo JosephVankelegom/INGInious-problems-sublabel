@@ -1,56 +1,7 @@
 {# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
 {# more information about the licensing of this file. #}
 
-<style>
 
-    /* Define here the variable color and reuse them everywhere, better code ...*/
-
-</style>
-
-
-<div class="form-group row">
-    <label for="header-PID" class="col-sm-2 control-label">Context</label>
-    <div class="col-sm-10">
-        <textarea id="header-PID" class="form-control" name="problem[PID][header]"></textarea>
-    </div>
-</div>
-
-
-<div class="form-group row">
-    <label for="code-PID" class="col-sm-2 ">Code</label>
-    <div class="col-sm-10">
-        <textarea id="code-PID" class="form-control" name="problem[PID][code]"
-                  oninput='this.style.height= ""; this.style.height = this.scrollHeight + "px"'
-                  onclick='this.style.height= ""; this.style.height = this.scrollHeight + "px"'
-                  style="width: 1044px; min-height: 150px; border-color: darkgray; padding-left: 35px;"
-        ></textarea>
-    </div>
-</div>
-
-
-
-
-<div class="row-cols-1" id="label-div-PID">
-</div>
-
-<div class="form-row" >
-    <button id="addLabel-PID" type="button" class = "btn btn-outline-secondary" style="background-color: #ced4da; font-weight: bold" >+</button>
-</div>
-
-
-<div class="form-group row">
-    <label for="answer-PID" class="col-sm-2 control-label"></label>
-    <div class="col-sm-10">
-        <input type="text" class="form-control" id="answer-PID" name="problem[PID][answer]"/>
-    </div>
-</div>
-
-
-<div id="context-menu-PID" class="context-menu">
-    <ul id="context-menu-ul-PID"></ul>
-</div>
-
-{#
 <style>
     /* Custom styles for the textarea container */
     .textarea-container {
@@ -73,53 +24,93 @@
 
     /* Custom styles for the textarea */
     .custom-textarea {
-      padding: 10px;
-      padding-left: 50px; /* Add space for line numbers */
-      height: 300px;
-      border: 1px solid #ced4da; /* Bootstrap's default border color */
-      border-radius: 5px;
-      resize: vertical; /* Allow vertical resizing */
-      overflow: auto; /* Enable scrollbar if content overflows */
+        padding: 10px;
+        padding-left: 50px; /* Add space for line numbers */
+        height: 300px;
+        width: 850px;
+        border: 1px solid #ced4da; /* Bootstrap's default border color */
+        border-radius: 5px;
+        resize: vertical; /* Allow vertical resizing */
+        overflow: auto; /* Enable scrollbar if content overflows */
     }
-  </style>
+</style>
 
 
-<body>
-  <div class="container mt-5">
-    <div class="row">
-      <div class="col">
-        <div class="textarea-container">
-          <div class="line-numbers"></div>
-          <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea"></textarea>
-        </div>
-      </div>
+
+
+{# Header #}
+<div class="form-group row">
+    <label for="header-PID" class="col-sm-2 control-label">Context</label>
+    <div class="col-sm-10">
+        <textarea id="header-PID" class="form-control" name="problem[PID][header]"></textarea>
     </div>
-  </div>
+</div>
 
-  <script>
-    // Optionally, you can add some JavaScript to generate line numbers dynamically
-    var textarea = document.getElementById('code-PID');
-    var lineNumbers = document.querySelector('.line-numbers');
+{# Code area #}
+<div class="form-group row">
+    <label for="code-PID" class="col-sm-2 control-label">Code</label>
+    <div class="col-sm-10">
+        <div class="container mt-5">
+                    <div class="textarea-container">
+                        <div class="line-numbers" id="line_code-PID"></div>
+                        <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea"
+                        ></textarea>
+                    </div>
+        </div>
+    </div>
+</div>
 
-    // Generate line numbers
-    textarea.addEventListener('input', function() {
-      var lines = this.value.split('\n').length;
-      lineNumbers.innerHTML = '';
-      for (var i = 1; i <= lines; i++) {
-        lineNumbers.innerHTML += i + '<br>';
-      }
-    });
 
-    // Initial line numbers generation
-    textarea.dispatchEvent(new Event('input'));
-  </script>
-</body>
+{# Labels section #}
+{#
+<div class="form-group row">
+    <label for="label-div-PID" class="col-sm-2 control-label">Labels</label>
+    <div class="row-cols-1" id="label-div-PID">
+    </div>
+</div>
 #}
 
+{# <div class="row">
+{#  <div class="col-6">
+{#    <div class="input-group mb-3">
+{#      <div class="input-group-prepend">
+{#        <div class="input-group-text">
+{#          <input type="checkbox" aria-label="Checkbox for following text input">
+{#        </div>
+{#      </div>
+{#      <input type="text" class="form-control" aria-label="Text input with checkbox">
+{#      <div class="input-group-append">
+{#        <button class="btn btn-outline-secondary" type="button"><i class="fa fa-lg fa-trash-o"></i></button>
+{#      </div>
+{#    </div>
+{#  </div>
+{#</div> #}
+
+<div class="row">
+  <div class="col-6">
+      <label for="label-div-PID" class="col-sm-2 control-label">Labels</label>
+      <div class="row-cols-1" id="label-div-PID">
+      </div>
+  </div>
+</div>
+
+<div class="form-row" >
+    <button id="addLabel-PID" type="button" class = "btn btn-outline-secondary" style="background-color: #ced4da; font-weight: bold" >+</button>
+</div>
 
 
+{# Answer, used to store the answer from the student #}
+<div class="form-group row">
+    <label for="answer-PID" class="col-sm-2 control-label"></label>
+    <div class="col-sm-10">
+        <input type="text" class="form-control" id="answer-PID" name="problem[PID][answer]" hidden/>
+    </div>
+</div>
 
-
+{# Context menu #}
+<div id="context-menu-PID" class="context-menu">
+    <ul id="context-menu-ul-PID"></ul>
+</div>
 
 
 
