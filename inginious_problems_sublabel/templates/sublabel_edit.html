@@ -3,36 +3,7 @@
 
 
 <style>
-    /* Custom styles for the textarea container */
-    .textarea-container {
-      position: relative;
-    }
 
-    /* Custom styles for the line numbers */
-    .line-numbers {
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 40px; /* Adjust as needed */
-      padding: 10px 5px;
-      font-family: monospace; /* Use monospace font for consistent character width */
-      text-align: right;
-      pointer-events: none; /* Ensure line numbers don't interfere with textarea */
-      border-right: 1px solid #ced4da; /* Add border to separate line numbers from textarea */
-    }
-
-    /* Custom styles for the textarea */
-    .custom-textarea {
-        padding: 10px;
-        padding-left: 50px; /* Add space for line numbers */
-        height: 300px;
-        width: 850px;
-        border: 1px solid #ced4da; /* Bootstrap's default border color */
-        border-radius: 5px;
-        resize: vertical; /* Allow vertical resizing */
-        overflow: auto; /* Enable scrollbar if content overflows */
-    }
 </style>
 
 
@@ -51,11 +22,10 @@
     <label for="code-PID" class="col-sm-2 control-label">Code</label>
     <div class="col-sm-10">
         <div class="container mt-5">
-                    <div class="textarea-container">
-                        <div class="line-numbers" id="line_code-PID"></div>
-                        <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea"
-                        ></textarea>
-                    </div>
+            <div class="textarea-container">
+                <div class="line-numbers" id="line_code-PID"></div>
+                <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea"></textarea>
+            </div>
         </div>
     </div>
 </div>

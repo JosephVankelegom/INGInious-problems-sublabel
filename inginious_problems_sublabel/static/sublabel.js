@@ -18,6 +18,7 @@ function studio_init_template_sublabel(well, pid, problem)
 {
     let textarea = $('#code-' + pid, well)
     let answerarea = $('#answer-' + pid, well)
+    let lineNumbers = $("#line_code-" + pid, well);
 
     let labelNameID = {}
     let highlightColor = {}
@@ -43,7 +44,7 @@ function studio_init_template_sublabel(well, pid, problem)
     }
 
 
-    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher");
+    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher", lineNumbers);
     contextMenuStart(textarea, pid, well)
     exercise.startTeacher();
 }
@@ -54,7 +55,7 @@ function load_feedback_sublabel(key, content) {
 
 class SubLabel{
 
-    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize, side) {
+    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize, side, linenumbers) {
         this.pid            = pid
         this.well           = well
         this.textarea       = textarea;
@@ -64,9 +65,12 @@ class SubLabel{
         this.highlightColor = highlightColor;
         this.textareasize   = textareasize
         this.side           = side;
+        this.lineNumbers     = linenumbers
     }
 
     startTeacher() {
+
+        let lineNumbers = this.lineNumbers;
 
          for(let id in this.labelNameID){
             this.createLabelText(id, this.highlightColor[id], false, this.pid, this.well)
@@ -75,7 +79,8 @@ class SubLabel{
         }
 
 
-        this.createHighlightTextarea()
+        var that = this;
+        this.createHighlightTextarea();
         this.createEraseContext(this.pid, this.well)
 
         $('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
@@ -97,7 +102,6 @@ class SubLabel{
             }
         })
 
-        var that = this;
         this.textarea.on('input', function(e){
             var start = this.selectionStart;
             var end = this.selectionEnd;
@@ -105,11 +109,10 @@ class SubLabel{
             //that.updateValues()
         })
 
-        var textarea = this.textarea
-        var lineNumbers = $("#line_code-" + this.pid);
+
 
         // Generate line numbers
-        textarea.on('input', function() {
+        this.textarea.on('input', function() {
           var lines = this.value.split('\n').length;
           lineNumbers.html('')
           for (var i = 1; i <= lines; i++) {
@@ -117,20 +120,21 @@ class SubLabel{
           }
         });
 
-        textarea.on('input', function() {
+        this.textarea.on('input', function() {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
         });
-        textarea.on('click', function() {
+        this.textarea.on('click', function() {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
-            textarea.trigger('input');
+            that.textarea.trigger('input');
         });
         // Initial line numbers generation
     }
 
     startStudent(){
 
+        var lineNumbers = this.lineNumbers;
 
         for(let id in this.labelNameID){
             this.createLabelText(id, this.highlightColor[id], true, this.pid, this.well)
@@ -156,6 +160,19 @@ class SubLabel{
             }
             this.createHighlightTextarea()
         })
+
+        this.textarea.on('click', function() {
+          var lines = this.value.split('\n').length;
+          lineNumbers.html('')
+          for (var i = 1; i <= lines; i++) {
+            lineNumbers.html(lineNumbers.html()+ i + '<br>')
+          }
+        });
+
+        this.textarea.on('click', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
     }
 
     /**
@@ -203,6 +220,13 @@ class SubLabel{
             $("context-menu-item_" + id+"-"+this.pid, this.well).remove()
             $("#erase-label_" + id+"-"+this.pid, this.well).remove()
             labelDiv.remove()
+            this.updateValues()
+        }
+    }
+    eraseLabelStudent(id, labelDiv){
+        let result = confirm("Press OK to erase the label");
+        if(result){
+            this.highlightValue[id] = [[]]
             this.updateValues()
         }
     }
@@ -258,7 +282,7 @@ class SubLabel{
 
         this.createCheckBox(id, inputGroupDiv, pid, well);
         inputGroupDiv.append(labelNameArea);
-        this.createEraseLabelButton(id, inputGroupDiv, pid, well);
+        this.createEraseLabelButton(id, inputGroupDiv, pid, well, isReadonly);
 
         labelDiv.append(inputGroupDiv)
 
@@ -303,7 +327,6 @@ class SubLabel{
         return $("#checkbox_" + id +"-"+pid);
     }
     isBoxChecked(id,pid,well){
-        if(this.side === "student"){return true}
         return this.getCheckBox(id,pid,well).is(":checked");
     }
 
@@ -313,7 +336,7 @@ class SubLabel{
      * @param id
      * @param labelDiv
      */
-    createEraseLabelButton(id, labelDiv, pid, well){
+    createEraseLabelButton(id, labelDiv, pid, well, isReadonly){
 
         var inputGroupDiv = document.createElement("div");
         inputGroupDiv.setAttribute("class", "input-group-append");
@@ -321,7 +344,14 @@ class SubLabel{
         var eraseLabel = document.createElement("button");
         eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid);
         eraseLabel.setAttribute("class", "btn btn-outline-secondary")
-        eraseLabel.onclick = () => {this.eraseLabelTeacher(id,labelDiv)}
+        eraseLabel.setAttribute("type", "button")
+        if(isReadonly){
+            eraseLabel.onclick = () => {this.eraseLabelStudent(id,labelDiv)}
+        }
+        else{
+            eraseLabel.onclick = () => {this.eraseLabelTeacher(id,labelDiv)}
+        }
+
 
         var iconTrash = document.createElement("i");
         iconTrash.setAttribute("class", "fa fa-lg fa-trash-o");
