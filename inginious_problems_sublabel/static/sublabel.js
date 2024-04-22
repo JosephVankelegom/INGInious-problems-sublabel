@@ -65,7 +65,7 @@ class SubLabel{
         this.highlightColor = highlightColor;
         this.textareasize   = textareasize
         this.side           = side;
-        this.lineNumbers     = linenumbers
+        this.lineNumbers    = linenumbers
     }
 
     startTeacher() {
@@ -488,9 +488,15 @@ class SubLabel{
     }
 
     getIntersectionTwoArrays(ranges1,labelsRanges1,ranges2,labelsRanges2){
-        function getNewLabelsValuesInsideFunction(label1,label2){
+        function getNewLabelsValuesInsideFunction(label1,label2, that){
             if(label1[0] === "time"){return [`${label2}`]}
-            else{return label1.concat(label2)}
+            else{
+                let newLabel = label1.concat(label2).toString()
+                if(!(newLabel in that.highlightColor)){
+                    that.highlightColor[newLabel] = that.highlightColor[label1].concat(`-${that.highlightColor[label2]}`)
+                }
+                return newLabel
+            }
         }
         let newRanges = [];
         let newLabels = [];
@@ -513,7 +519,7 @@ class SubLabel{
                     newLabels.push([`${labelsRanges1[index1]}`])
                 }
                 newRanges.push([Math.max(range1[0],range2[0]), Math.min(range1[1],range2[1])])
-                newLabels.push(getNewLabelsValuesInsideFunction(labelsRanges1[index1],labelsRanges2[foundIntersectingIndex]))
+                newLabels.push([getNewLabelsValuesInsideFunction(labelsRanges1[index1],labelsRanges2[foundIntersectingIndex], this)])
                 // if range1 is bigger we need to take into consideration the part left left.
                 if(range1[1] > range2[1]){
                     let temp = this.getIntersectionTwoArrays([[range2[1], range1[1]]], [labelsRanges1[index1]], ranges2, labelsRanges2) // TODO On revisite toute les liste quand il y a pas besoin.
@@ -548,14 +554,7 @@ class SubLabel{
         for(let i = 0; i < arrayTime.length; i++){
             let newLabel = labelTime[i][0];
             if(newLabel === "time"){continue;}
-            let newColor = this.highlightColor[newLabel];
-            if(labelTime[i].length > 1){
-                for(let j=1; j < labelTime[i].length; j ++){
-                    newLabel= newLabel.concat(`,${labelTime[i][j]}`);
-                    newColor= newColor.concat(`-${this.highlightColor[labelTime[i][j]]}`)
-                }
-                if(newLabel in this.highlightColor){}else{this.highlightColor[newLabel] = newColor} // TODO rajouter ! pour pas avoir if/else qui est moche
-            }
+
             if(newLabel in result){result[newLabel] = result[newLabel].concat([arrayTime[i]])}
             else{result[newLabel] = [arrayTime[i]]}
         }
