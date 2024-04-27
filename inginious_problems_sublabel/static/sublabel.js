@@ -92,13 +92,13 @@ class SubLabel{
                 var start = this.selectionStart;
                 var end = this.selectionEnd;
 
-                this.value = this.value.substring(0, start) + "\t" + this.value.substring(end);
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
 
                 // put caret at right position again
                 this.selectionStart =
-                    this.selectionEnd = start+1;
+                    this.selectionEnd = start+4;
 
-                that.updateValues()
+                //that.updateValues()
             }
         })
 
