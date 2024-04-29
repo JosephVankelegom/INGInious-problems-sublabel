@@ -45,7 +45,6 @@ function studio_init_template_sublabel(well, pid, problem)
 
 
     let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher", lineNumbers);
-    contextMenuStart(textarea, pid, well)
     exercise.startTeacher();
 }
 
@@ -82,6 +81,7 @@ class SubLabel{
         var that = this;
         this.createHighlightTextarea();
         this.createEraseContext(this.pid, this.well)
+        contextMenuStart(this.textarea, this.pid, this.well)
 
         $('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
 
@@ -633,8 +633,8 @@ function contextMenuStart(textarea ,pid, well) {
 
         newDiv.css({
             display: "block",
-            left: event.clientX -280 + "px",
-            top: event.clientY + "px"
+            left: e.pageX -260 + "px",
+            top: e.pageY - 200 + "px"
         });
     })
     document.addEventListener("click", function (event){
