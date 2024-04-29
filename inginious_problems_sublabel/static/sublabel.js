@@ -217,7 +217,7 @@ class SubLabel{
             delete this.highlightValue[id]
             $("#label-text_" + id+"-"+this.pid, this.well).remove()
             this.getCheckBox(id,this.pid,this.well).remove()
-            $("context-menu-item_" + id+"-"+this.pid, this.well).remove()
+            $("#context-menu-item_" +id+"-"+this.pid).remove()
             $("#erase-label_" + id+"-"+this.pid, this.well).remove()
             labelDiv.remove()
             this.updateValues()
@@ -343,8 +343,9 @@ class SubLabel{
 
         var eraseLabel = document.createElement("button");
         eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid);
-        eraseLabel.setAttribute("class", "btn btn-outline-secondary")
+        eraseLabel.setAttribute("class", "btn btn-danger")
         eraseLabel.setAttribute("type", "button")
+
         if(isReadonly){
             eraseLabel.onclick = () => {this.eraseLabelStudent(id,labelDiv)}
         }
