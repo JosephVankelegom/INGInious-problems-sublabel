@@ -1,6 +1,7 @@
 import json
 import os.path
 import re
+import gettext
 
 from inginious.common.tasks_problems import Problem
 from inginious.frontend.task_problems import DisplayableProblem
@@ -53,19 +54,27 @@ class SublabelProblem(Problem):
             total += max(0.0, (len(result_right[label]) - len(result_wrong[label])) / len(answer[label]["values"]))
 
         total = total / len(answer)
-
-        output_statement = "total = " + str(total) + "\n"
+        output_statement = (f".. list-table:: **{self.get_name()}** \r"
+                            f"  :widths: 10 10 \n"
+                            f"  :header-rows: 1\n\n"
+                            f"  * - Score \n"
+                            f"    - {total * 100} %\n")
         for label in answer:
-            output_statement += (answer[label]["label"]
-                                 + " : #correct = " + str(len(result_right[label]))
-                                 + "   #incorrect = " + str(len(result_wrong[label]))
-                                 + "   #expected = " + str(len(answer[label]["values"]))
-                                 + "\n")
+            output_statement += (
+                    f"  * - **{answer[label]['label']}**\n"
+                    f"    - \n"
+                    + f"  * - correct \n"
+                      f"    - {len(result_right[label])}\n"
+                    + f"  * - incorrect \n"
+                      f"    - {len(result_wrong[label])}\n"
+                    + f"  * - expected \n"
+                      f"    - {len(answer[label]['values'])}\n"
+            )
 
-        if total >= 0.5:
+        if total >= 1:
             return True, output_statement, None, 0, "total = " + str(total) + "\n"
         else:
-            return False, None, None, 0, ""
+            return False, output_statement, None, 0, ""
 
     @classmethod
     def parse_problem(cls, problem_content):
