@@ -123,7 +123,15 @@ class SublabelProblem(Problem):
             )
 
         total = total / len(answer)
-        output_statement = (f".. list-table:: **{self.get_name()}** \r"
+        output_statement = (f"The correction is by selection (a selection is each zone selected divided by backslash).\n\n"
+                            f"- correct : is the number of correct selection you have done \n\n"
+                            f"- incomplete: is the number of selection you have done that are almost correct, "
+                            f"but are missing essential elements\n\n"
+                            f"- over tolerance : are the selection you did that are too big, but have a correct selection in them"
+                            f"they only impact negatively you mark\n\n"
+                            f"- miss: is the number of selection you have done that don't intersect with any correct selection\n\n"
+                            f"- not found: is the number of selection done by the teacher you still need to find.\n\n\n"
+                            f".. list-table:: **{self.get_name()}** \r"
                             f"  :widths: 10 10 \n"
                             f"  :header-rows: 1\n\n"
                             f"  * - Score \n"
@@ -141,7 +149,7 @@ class SublabelProblem(Problem):
     @classmethod
     def get_text_fields(cls):
         fields = Problem.get_text_fields()
-        fields.update({"header": True, "code": True, "answer": True, "tolerance": True})
+        fields.update({"header": True, "code": True, "answer": True})
         return fields
 
     def get_tolerance(cls):
