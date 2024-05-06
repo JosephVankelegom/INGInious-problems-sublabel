@@ -21,6 +21,7 @@
             <div class="textarea-container">
                 <div class="line-numbers" id="line_code-{{inputId}}"></div>
                 <textarea id="code-{{inputId}}" class="form-control custom-textarea" readonly>{{ code | safe }}</textarea>
+
             </div>
         </div>
     </div>
@@ -39,8 +40,24 @@
 
 
 
-<div class="row-cols-1" id="label-div-{{ inputId }}">
+<div class="row">
+  <div class="col-6">
+      <label for="label-div-{{ inputId }}" class="col-sm-2 control-label">Labels</label>
+      <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button for selecting">
+          <div class="btn-group mr-2" role="group" aria-label="group of colors" id="div-toolbar-{{ inputId }}"></div>
+          <div class="btn-group mr-2" role="group" aria-label="eraser">
+              <button type="button" class="btn btn-secondary" aria-label="eraser" id="toolbar-eraser-{{ inputId }}"><i class="fa fa-eraser"></i></button>
+          </div>
+          <div class="btn-group mr-2" role="group" aria-label="stop">
+              <button type="button" class="btn btn-secondary" id="toolbar-stop-{{ inputId }}"><i class="fa fa-stop"></i></button>
+          </div>
+
+      </div>
+      <div class="row-cols-1" id="label-div-{{ inputId }}">
+      </div>
+  </div>
 </div>
+
 
 
 <div class="form-group row">
@@ -76,9 +93,10 @@
         }
 
         let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, "{{ inputId }}", null, 0, "student", lineNumbers);
-        contextMenuStart(textarea, "{{ inputId }}", null)
+        //contextMenuStart(textarea, "{{ inputId }}", null)
         exercise.startStudent();
         answerarea.trigger('change')
+        textarea.trigger('change')
     }
 </script>
 

@@ -65,6 +65,7 @@ class SubLabel{
         this.textareasize   = textareasize
         this.side           = side;
         this.lineNumbers    = linenumbers
+        this.action         = "action"
     }
 
     startTeacher() {
@@ -73,15 +74,15 @@ class SubLabel{
 
          for(let id in this.labelNameID){
             this.createLabelText(id, this.highlightColor[id], false, this.pid, this.well)
-            this.createLabelContext(id, this.pid, this.well)
+            //this.createLabelContext(id, this.pid, this.well)
             this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
         }
 
 
         var that = this;
         this.createHighlightTextarea();
-        this.createEraseContext(this.pid, this.well)
-        contextMenuStart(this.textarea, this.pid, this.well)
+        //this.createEraseContext(this.pid, this.well)
+        //contextMenuStart(this.textarea, this.pid, this.well)
 
         $('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
 
@@ -118,7 +119,8 @@ class SubLabel{
           for (var i = 1; i <= lines; i++) {
             lineNumbers.html(lineNumbers.html()+ i + '<br>')
           }
-        });
+        }
+        );
 
         this.textarea.on('input', function() {
             this.style.height = 'auto';
@@ -127,9 +129,25 @@ class SubLabel{
         this.textarea.on('click', function() {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
-            that.textarea.trigger('input');
         });
         // Initial line numbers generation
+
+        this.textarea.on("mouseup", () =>{
+            switch(this.action){
+                case "stop": break;
+                case "eraser":
+                    this.highlightSelectionErase(this.pid, this.well)
+                    break;
+                default:
+                    this.highlightSelection(this.action)
+                    break;
+            }
+
+        })
+
+        $("#toolbar-eraser-"+this.pid).on("click", () => this.set_action("eraser"))
+        $("#toolbar-stop-"+this.pid).on("click", () => this.set_action("stop"))
+
     }
 
     startStudent(){
@@ -138,13 +156,13 @@ class SubLabel{
 
         for(let id in this.labelNameID){
             this.createLabelText(id, this.highlightColor[id], true, this.pid, this.well)
-            this.createLabelContext(id, this.pid, this.well)
+            //this.createLabelContext(id, this.pid, this.well)
             this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
         }
 
 
         this.createHighlightTextarea()
-        this.createEraseContext(this.pid, this.well)
+        //this.createEraseContext(this.pid, this.well)
 
         this.answerarea.on('change', () => {
             let answer = this.answerarea.val();
@@ -161,7 +179,8 @@ class SubLabel{
             this.createHighlightTextarea()
         })
 
-        this.textarea.on('click', function() {
+
+        this.textarea.on('change', function() {
           var lines = this.value.split('\n').length;
           lineNumbers.html('')
           for (var i = 1; i <= lines; i++) {
@@ -169,10 +188,25 @@ class SubLabel{
           }
         });
 
-        this.textarea.on('click', function() {
+        this.textarea.on('change', function() {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
         });
+
+        this.textarea.on("mouseup", () =>{
+            switch(this.action){
+                case "stop": break;
+                case "eraser":
+                    this.highlightSelectionErase(this.pid, this.well)
+                    break;
+                default:
+                    this.highlightSelection(this.action)
+                    break;
+            }
+
+        })
+        $("#toolbar-eraser-"+this.pid).on("click", () => this.set_action("eraser"))
+        $("#toolbar-stop-"+this.pid).on("click", () => this.set_action("stop"))
     }
 
     /**
@@ -203,7 +237,7 @@ class SubLabel{
         let color = colors[lengthDict(this.highlightValue)]
         var id = "Label_id_" + lengthDict(this.highlightValue).toString(); // TODO a verifier dans le futur que ca ne fasse pas crash si creation + delete (trouver solution plus élégante)
         this.createLabelText(id, color, false, pid, well)
-        this.createLabelContext(id, pid, well)
+        //this.createLabelContext(id, pid, well)
         this.highlightValue[id] = [];
         this.highlightColor[id] = color
 
@@ -217,8 +251,9 @@ class SubLabel{
             delete this.highlightValue[id]
             $("#label-text_" + id+"-"+this.pid, this.well).remove()
             this.getCheckBox(id,this.pid,this.well).remove()
-            $("#context-menu-item_" +id+"-"+this.pid).remove()
+            //$("#context-menu-item_" +id+"-"+this.pid).remove()
             $("#erase-label_" + id+"-"+this.pid, this.well).remove()
+            $("#toolbar-coloring_"+id+"-"+this.pid).remove()
             labelDiv.remove()
             this.updateValues()
         }
@@ -232,7 +267,7 @@ class SubLabel{
     }
 
     createLabelStudent(id, name, color){
-        this.createLabelContext(id);
+        //this.createLabelContext(id);
         this.highlightValue[id] = [];
         this.highlightColor[id] = color;
         this.labelNameID[id] = name;
@@ -286,6 +321,9 @@ class SubLabel{
 
         labelDiv.append(inputGroupDiv)
 
+        this.createColoringButton(id, pid, color)
+        // create coloring logo button
+
     }
 
 
@@ -298,8 +336,9 @@ class SubLabel{
     /**
      * create a checkbox that is linked to each label, with id define as checkbox_{{id from label}}-{{id of exercice}}
      * @param id = id of the label.
-     * @param textarea where the text should be highlighted
-     * @param labelNameArea is the input area where we set the label name
+     * @param labelDiv
+     * @param pid
+     * @param well
      */
     createCheckBox(id, labelDiv, pid, well){
 
@@ -335,6 +374,9 @@ class SubLabel{
      * Create the Erase button that is linked to each label.
      * @param id
      * @param labelDiv
+     * @param pid
+     * @param well
+     * @param isReadonly
      */
     createEraseLabelButton(id, labelDiv, pid, well, isReadonly){
 
@@ -362,11 +404,26 @@ class SubLabel{
         labelDiv.append(eraseLabel);
     }
 
+    createColoringButton(id, pid, color){
+        var coloring_button = document.createElement("button")
+        coloring_button.setAttribute("type", "button")
+        coloring_button.setAttribute("class", "btn btn-secondary")
+        coloring_button.setAttribute("id", "toolbar-coloring_"+id+"-"+pid)
+        coloring_button.setAttribute("style", "background-color: var(--"+color+");")
+        coloring_button.onclick = () => {this.set_action(id)}
+
+        var iconBrush = document.createElement("i");
+        iconBrush.setAttribute("class", "fa fa-paint-brush");
+
+        coloring_button.append(iconBrush)
+        $("#div-toolbar-"+pid).append(coloring_button)
+    }
+
     set_labelNameID(id, name,pid, well){
         this.labelNameID[id] = name;
         let area = $("#label-text_"+id+"-"+pid);
         area.val(name);
-        this.set_contextName(id,name,pid, well);
+        //this.set_contextName(id,name,pid, well);
     }
 
     set_contextName(id,name, pid, well){ // TODO a changer danger PID pas bien écrit
@@ -436,6 +493,10 @@ class SubLabel{
             this.selectionStart =
                 this.selectionEnd = start+1;
         }
+    }
+
+    set_action(val){
+        this.action = val;
     }
 
     /**

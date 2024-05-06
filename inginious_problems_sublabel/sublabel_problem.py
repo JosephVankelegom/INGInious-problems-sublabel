@@ -19,8 +19,9 @@ class SublabelProblem(Problem):
     def __init__(self, problemid, content, translations, taskfs):
         Problem.__init__(self, problemid, content, translations, taskfs)
         self._header = content['header'] if "header" in content else ""
-        self._answer = str(content.get("answer", ""))
+        self._answer = self.parse_answer(content.get("answer", ""))
         self._code = content['code'] if "code" in content else ""
+        self._tolerance = content['tolerance'] if "tolerance" in content else "line"
 
     @classmethod
     def get_type(cls):
@@ -33,43 +34,100 @@ class SublabelProblem(Problem):
         return str
 
     def check_answer(self, task_input, language):
-        symbols = ["\n", " "]  # TODO maybe implement a symbol variable to allow teacher to update that list.
-        answer = json.loads(self._answer)
-        answer_student = json.loads(task_input[self.get_id()])
+        symbols = [" "]
+        answer_raw = self._answer
+        answer_student_raw = json.loads(task_input[self.get_id()])
+        answer = {}
+        answer_student = {}
+        answer_tolerance = self.get_tolerance()  # TODO a implementer car pour le moment je laisse tout passer.
         code = self._code
         result_right = {}
-        result_wrong = {}
-        total = 0
-        for label in answer:
-            answer[label]["values"] = remove_symbol_list_from_answer(answer[label]["values"], code, symbols)
-            answer_student[label]["values"] = remove_symbol_list_from_answer(answer_student[label]["values"], code, symbols)
-            result_right[label] = []
-            result_wrong[label] = []
+        selection_found = {}
 
-            for i in range(len(answer_student[label]["values"])):
-                if answer_student[label]["values"][i] in answer[label]["values"]:
-                    result_right[label].append(i)
+        # Clean raw
+        for label in answer_raw:
+            selection_found[label] = {}
+            result_right[label] = {}
+            # Divide section by \n
+            answer[label] = remove_symbol_from_answer(answer_raw[label]['values'], code, '\n')
+            for sel in answer[label]:
+                selection_found[label][json.dumps(sel)] = 0  # 0: not found, 1: found, 2: incomplete, 3: over tolerance
+
+            if label not in answer_student_raw:
+                continue
+            answer_student[label] = remove_symbol_from_answer(answer_student_raw[label]['values'], code, '\n')
+            for ans in answer_student[label]:
+                ans_clean = remove_symbol_list_from_answer([ans], code, symbols)
+                corr = verify_correspondence_strict(ans, ans_clean, answer[label], code, symbols)
+                tolerance = check_tolerance(ans_clean, answer_tolerance)
+                result_right[label][json.dumps(ans)] = [corr, tolerance]
+
+        # Calcul du score total.
+        for label in answer:
+            if label in answer_student:
+                for ans in answer_student[label]:
+                    if not result_right[label][json.dumps(ans)][1]:  # If selection student over tolerance, skip
+                        continue
+                    for sel in result_right[label][json.dumps(ans)][0]:
+                        if selection_found[label][sel] == 1:
+                            continue
+                        elif result_right[label][json.dumps(ans)][0][sel]:
+                            selection_found[label][sel] = 1
+                        else:
+                            selection_found[label][sel] = 2
+
+        total = 0
+        output_statement = ""
+        for label in answer:
+            found = 0
+            incomplete = 0
+            over_tolerance = 0
+            miss = 0
+            correct = 0
+            for sel in selection_found[label]:
+                match selection_found[label][sel]:
+                    case 1:
+                        found += 1
+                    case 2:
+                        incomplete += 1
+            not_found = len(selection_found[label]) - found - incomplete - over_tolerance
+
+            for ans in result_right[label]:
+                if len(result_right[label][ans][0]) == 0:
+                    miss += 1
+                elif not result_right[label][ans][1]:
+                    over_tolerance += 1
                 else:
-                    result_wrong[label].append(i)
-            total += max(0.0, (len(result_right[label]) - len(result_wrong[label])) / len(answer[label]["values"]))
+                    is_corr = False
+                    for sel_stuf in result_right[label][ans][0]:
+                        if result_right[label][ans][0][sel_stuf]:
+                            is_corr = True
+                    if is_corr:
+                        correct += 1
+
+            score = max(0, (found - over_tolerance - miss) / len(answer[label]))
+            total += score
+            output_statement += (
+                    f"  * - **{answer_raw[label]['label']}**\n"
+                    f"    - {score * 100} % \n"
+                    + f"  * - correct \n"
+                      f"    - {correct}\n"
+                    + f"  * - incomplete \n"
+                      f"    - {incomplete}\n"
+                    + f"  * - over tolerance \n"
+                      f"    - {over_tolerance}\n"
+                    + f"  * - incorrect \n"
+                      f"    - {miss}\n"
+                    + f"  * - missing \n"
+                      f"    - {not_found}\n"
+            )
 
         total = total / len(answer)
         output_statement = (f".. list-table:: **{self.get_name()}** \r"
                             f"  :widths: 10 10 \n"
                             f"  :header-rows: 1\n\n"
                             f"  * - Score \n"
-                            f"    - {total * 100} %\n")
-        for label in answer:
-            output_statement += (
-                    f"  * - **{answer[label]['label']}**\n"
-                    f"    - \n"
-                    + f"  * - correct \n"
-                      f"    - {len(result_right[label])}\n"
-                    + f"  * - incorrect \n"
-                      f"    - {len(result_wrong[label])}\n"
-                    + f"  * - expected \n"
-                      f"    - {len(answer[label]['values'])}\n"
-            )
+                            f"    - {total * 100} %\n") + output_statement
 
         if total >= 1:
             return True, output_statement, None, 0, "total = " + str(total) + "\n"
@@ -83,8 +141,30 @@ class SublabelProblem(Problem):
     @classmethod
     def get_text_fields(cls):
         fields = Problem.get_text_fields()
-        fields.update({"header": True, "code": True, "answer": True})
+        fields.update({"header": True, "code": True, "answer": True, "tolerance": True})
         return fields
+
+    def get_tolerance(cls):
+        tolerance_type = cls._tolerance
+        match tolerance_type:
+            case "line":
+                return identify_lines(cls._code)
+            case "fix":
+                tolerance_size = 5
+                return fix_tolerance(cls._answer, tolerance_size)
+            case _:
+                return identify_lines(cls._code)
+
+    def parse_answer(self, answer_raw):
+        answer = json.loads(str(answer_raw))
+        for label in answer:
+            answer_result = []
+            for i in range(len(answer[label]['values'])):
+                ans = answer[label]['values'][i]
+                if ans:
+                    answer_result.append(answer[label]['values'][i])
+            answer[label]['values'] = answer_result
+        return answer
 
 
 def parse_answer_student(answer):
@@ -116,7 +196,7 @@ def remove_index_from_answer(answer, index):
     result = []
     for i in range(len(answer)):
         interval = answer[i]
-        if not interval:
+        if not interval:  ## TODO verifier si not interval est bien le cas limite si l'interval existe aps
             continue
         position = is_index_in_interval(interval, index)
         if position == -1:
@@ -131,7 +211,7 @@ def remove_index_from_answer(answer, index):
                 result.append([interval[0], index])
 
             if index + 1 != interval[1]:
-                result.append([index+1, interval[1]])
+                result.append([index + 1, interval[1]])
 
         elif position == 2:
             result.append([interval[0], index])
@@ -149,6 +229,110 @@ def is_index_in_interval(interval, index):
         return 1
 
 
+def intersect(interval1, interval2):
+    if interval1[1] <= interval2[0] or interval2[1] <= interval1[0]:
+        return False
+    else:
+        return True
+
+
+def identify_lines(code):
+    result = []
+    symbol = '\n'
+    all_indexes_occu = [m.start() for m in
+                        re.finditer(symbol, code)]  # inside text \n are converted to \\n so no problem.
+    for index in range(len(all_indexes_occu)):
+        if index == 0:
+            result.append([0, all_indexes_occu[index]])
+        else:
+            result.append([all_indexes_occu[index - 1], all_indexes_occu[index]])
+    return result
+
+
+def fix_tolerance(answer, tolerance):
+    result = []
+    for label in answer:
+        for ans in answer[label]['values']:
+            result.append([ans[0] - tolerance, ans[1] + tolerance])
+
+    return result
+
+
+def sub_interval(sub_interval, interval):
+    if interval[0] <= sub_interval[0] and sub_interval[1] <= interval[1]:
+        return True
+    else:
+        return False
+
+
+"""
+Only one label.
+
+INPUT
+
+-interval: raw selection from student (unclean from symbols) => []
+-list_of_intervals: all raw selection from teacher  => []
+-code : raw code. => String
+-symbols : symbols to remove to clean the selection. => [Strings]
+
+OUTPUT
+
+-intersection : dictionary off all the selection (from teacher) the interval (selection from student) intersected. => {key:value}
+the key are the intersected selection from teacher.
+the value is True if it completely fill the teacher label, False if there a missing elements.
+
+
+"""
+
+
+def verify_correspondence_strict(interval, interval_clean, list_of_intervals, code, symbols):
+    intersection = {}
+
+    # check for each selection from the teacher individually.
+    for index in range(len(list_of_intervals)):
+        inter_teacher = list_of_intervals[index]
+        if intersect(interval, inter_teacher):
+            inter_teach_clean = remove_symbol_list_from_answer([inter_teacher], code, symbols)
+            is_corr = True
+
+            # Check every element from the selection is inside de selection form the student.
+            for elem_teacher in inter_teach_clean:
+
+                is_in = False
+                for elem_student in interval_clean:
+                    if sub_interval(elem_teacher, elem_student):
+                        is_in = True
+                        break
+                if not is_in:
+                    is_corr = False
+
+            # add if the selection is complete.
+            if is_corr:
+                intersection[json.dumps(inter_teacher)] = True
+            else:
+                intersection[json.dumps(inter_teacher)] = False
+
+    return intersection
+
+
+"""
+:return True if it does respect the tolerance.
+"""
+
+
+def check_tolerance(interval_clean, tolerance_intervals):
+    for inter in interval_clean:
+        is_in = False
+        for tol in tolerance_intervals:
+            if sub_interval(inter, tol):
+                is_in = True
+                break
+        if not is_in:
+            return False
+
+    return True
+
+
 class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
     """ A displayable sublabel problem """
 
@@ -164,9 +348,10 @@ class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
         header = ParsableText(self.gettext(language, self._header), "rst",
                               translation=self.get_translation_obj(language))
         code = self._code
-        data = json.dumps(parse_answer_student(self._answer))
+        tolerance = self._tolerance
+        data = json.dumps(self._answer)
         return template_helper.render("sublabel.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id(),
-                                      header=header, code=code, data=data)
+                                      header=header, code=code, tolerance=tolerance, data=data)
 
     @classmethod
     def show_editbox(cls, template_helper, key, language):

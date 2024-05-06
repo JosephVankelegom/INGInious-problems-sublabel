@@ -26,6 +26,7 @@
                 <div class="line-numbers" id="line_code-PID"></div>
                 <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea"></textarea>
             </div>
+            <button type="button" id="extend-code-PID" class="btn btn-primary"></button>
         </div>
     </div>
 </div>
@@ -56,9 +57,21 @@
 {#  </div>
 {#</div> #}
 
+
+
 <div class="row">
   <div class="col-6">
       <label for="label-div-PID" class="col-sm-2 control-label">Labels</label>
+      <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button for selecting">
+          <div class="btn-group mr-2" role="group" aria-label="group of colors" id="div-toolbar-PID"></div>
+          <div class="btn-group mr-2" role="group" aria-label="eraser">
+              <button type="button" class="btn btn-secondary" aria-label="eraser" id="toolbar-eraser-PID"><i class="fa fa-eraser"></i></button>
+          </div>
+          <div class="btn-group mr-2" role="group" aria-label="stop">
+              <button type="button" class="btn btn-secondary" id="toolbar-stop-PID"><i class="fa fa-stop"></i></button>
+          </div>
+
+      </div>
       <div class="row-cols-1" id="label-div-PID">
       </div>
   </div>
@@ -68,6 +81,15 @@
     <button id="addLabel-PID" type="button" class = "btn btn-success" style="font-weight: bold" >+</button>
 </div>
 
+<div class="input-group mb-3">
+    <div class="input-group-prepend">
+        <label class="input-group-text" for="inputGroupSelect01">Tolerance</label>
+    </div>
+    <select class="custom-select-lg" id="inputGroupSelect01" name="problem[PID][tolerance]">
+        <option selected>line</option>
+        <option value="1">fixed</option>
+    </select>
+</div>
 
 {# Answer, used to store the answer from the student #}
 <div class="form-group row">
