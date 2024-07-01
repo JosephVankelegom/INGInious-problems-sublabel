@@ -92,11 +92,17 @@ class SublabelProblem(Problem):
                         incomplete += 1
             not_found = len(selection_found[label]) - found - incomplete - over_tolerance
 
+            output_statement_ans_stud = ""
             for ans in result_right[label]:
+                ans_number = json.loads(ans)
+
                 if len(result_right[label][ans][0]) == 0:
                     miss += 1
+                    output_statement_ans_stud += f"  * - 🚫 {code[ans_number[0]:ans_number[1]]} \n"
+                    output_statement_ans_stud += f"    - \n"
                 elif not result_right[label][ans][1]:
                     over_tolerance += 1
+                    output_statement_ans_stud += f"    - over_tolerance\n"
                 else:
                     is_corr = False
                     for sel_stuf in result_right[label][ans][0]:
@@ -104,23 +110,30 @@ class SublabelProblem(Problem):
                             is_corr = True
                     if is_corr:
                         correct += 1
+                        output_statement_ans_stud += f"  * - ✅️ {code[ans_number[0]:ans_number[1]]} \n"
+                        output_statement_ans_stud += f"    - \n"
+                    else:
+                        output_statement_ans_stud += f"  * - 🟧 {code[ans_number[0]:ans_number[1]]} \n"
+                        output_statement_ans_stud += f"    - \n"
 
             score = max(0, (found - over_tolerance - miss) / len(answer[label]))
             total += score
+            # text format under :
             output_statement += (
                     f"  * - **{answer_raw[label]['label']}**\n"
                     f"    - {score * 100} % \n"
-                    + f"  * - correct \n"
-                      f"    - {correct}\n"
-                    + f"  * - incomplete \n"
-                      f"    - {incomplete}\n"
-                    + f"  * - over tolerance \n"
-                      f"    - {over_tolerance}\n"
-                    + f"  * - incorrect \n"
-                      f"    - {miss}\n"
-                    + f"  * - missing \n"
-                      f"    - {not_found}\n"
+                    #+ f"  * - correct \n"
+                    #  f"    - {correct}\n"
+                    #+ f"  * - incomplete \n"
+                    #  f"    - {incomplete}\n"
+                    #+ f"  * - over tolerance \n"
+                    #  f"    - {over_tolerance}\n"
+                    #+ f"  * - incorrect \n"
+                    #  f"    - {miss}\n"
+                    #+ f"  * - missing \n"
+                    #  f"    - {not_found}\n"
             )
+            output_statement += output_statement_ans_stud # TODO TEST
 
         total = total / len(answer)
         output_statement = (f"The correction is by selection (a selection is each zone selected divided by backslash).\n\n"
