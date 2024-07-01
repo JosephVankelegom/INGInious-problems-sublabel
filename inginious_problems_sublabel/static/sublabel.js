@@ -86,7 +86,7 @@ class SubLabel{
 
         $('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
 
-        // add the possibility of tabulation
+        // add the possibility of tabulation  change tab by 3 spaces.
         this.textarea.on('keydown', function(e){
             if(e.key === 'Tab'){
                 e.preventDefault();
@@ -103,13 +103,13 @@ class SubLabel{
             }
         })
 
+        //
         this.textarea.on('input', function(e){
             var start = this.selectionStart;
             var end = this.selectionEnd;
             const indent = that.updateIndexesOnInput(start, end);
             //that.updateValues()
         })
-
 
 
         // Generate line numbers
@@ -132,7 +132,7 @@ class SubLabel{
         });
         // Initial line numbers generation
 
-        this.textarea.on("mouseup", () =>{
+        this.textarea.on("select", () =>{
             switch(this.action){
                 case "stop": break;
                 case "eraser":
@@ -193,7 +193,7 @@ class SubLabel{
             this.style.height = this.scrollHeight + 'px';
         });
 
-        this.textarea.on("mouseup", () =>{
+        this.textarea.on("select", () =>{
             switch(this.action){
                 case "stop": break;
                 case "eraser":
