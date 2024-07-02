@@ -44,7 +44,7 @@ class SublabelProblem(Problem):
         result_right = {}
         selection_found = {}
 
-        # Clean raw
+        # Verify answer for each label, check tolerance.
         for label in answer_raw:
             selection_found[label] = {}
             result_right[label] = {}
@@ -53,28 +53,31 @@ class SublabelProblem(Problem):
             for sel in answer[label]:
                 selection_found[label][json.dumps(sel)] = 0  # 0: not found, 1: found, 2: incomplete, 3: over tolerance
 
-            if label not in answer_student_raw:
+            if label not in answer_student_raw:  # student didn't complete this label
                 continue
+
             answer_student[label] = remove_symbol_from_answer(answer_student_raw[label]['values'], code, '\n')
             for ans in answer_student[label]:
                 ans_clean = remove_symbol_list_from_answer([ans], code, symbols)
                 corr = verify_correspondence_strict(ans, ans_clean, answer[label], code, symbols)
                 tolerance = check_tolerance(ans_clean, answer_tolerance)
-                result_right[label][json.dumps(ans)] = [corr, tolerance]
+                result_right[label][json.dumps(ans)] = [corr, tolerance]   # corr is all the sel that are intersected (0 if correct)
 
         # Calcul du score total.
         for label in answer:
-            if label in answer_student:
-                for ans in answer_student[label]:
-                    if not result_right[label][json.dumps(ans)][1]:  # If selection student over tolerance, skip
+            if label not in answer_student:  # skip if student didn't answer.
+                continue
+
+            for ans in answer_student[label]:
+                if not result_right[label][json.dumps(ans)][1]:  # If selection student over tolerance, skip
+                    continue
+                for sel in result_right[label][json.dumps(ans)][0]:
+                    if selection_found[label][sel] == 1:
                         continue
-                    for sel in result_right[label][json.dumps(ans)][0]:
-                        if selection_found[label][sel] == 1:
-                            continue
-                        elif result_right[label][json.dumps(ans)][0][sel]:
-                            selection_found[label][sel] = 1
-                        else:
-                            selection_found[label][sel] = 2
+                    elif result_right[label][json.dumps(ans)][0][sel]:
+                        selection_found[label][sel] = 1
+                    else:
+                        selection_found[label][sel] = 2
 
         total = 0
         output_statement = ""
@@ -96,13 +99,15 @@ class SublabelProblem(Problem):
             for ans in result_right[label]:
                 ans_number = json.loads(ans)
 
+                output_statement_ans_stud += f"  * - {code[ans_number[0]:ans_number[1]]} \n"
                 if len(result_right[label][ans][0]) == 0:
                     miss += 1
-                    output_statement_ans_stud += f"  * - 🚫 {code[ans_number[0]:ans_number[1]]} \n"
+                    output_statement_ans_stud += f"    - 🚫 incorrect\n"
                     output_statement_ans_stud += f"    - \n"
                 elif not result_right[label][ans][1]:
                     over_tolerance += 1
-                    output_statement_ans_stud += f"    - over_tolerance\n"
+                    output_statement_ans_stud += f"    - 🟧 over_tolerance\n"
+                    output_statement_ans_stud += f"    - \n"
                 else:
                     is_corr = False
                     for sel_stuf in result_right[label][ans][0]:
@@ -110,45 +115,38 @@ class SublabelProblem(Problem):
                             is_corr = True
                     if is_corr:
                         correct += 1
-                        output_statement_ans_stud += f"  * - ✅️ {code[ans_number[0]:ans_number[1]]} \n"
+                        output_statement_ans_stud += f"    - ✅️ succes \n"
                         output_statement_ans_stud += f"    - \n"
                     else:
-                        output_statement_ans_stud += f"  * - 🟧 {code[ans_number[0]:ans_number[1]]} \n"
+                        output_statement_ans_stud += f"    - 🟧 incomplete \n"
                         output_statement_ans_stud += f"    - \n"
 
             score = max(0, (found - over_tolerance - miss) / len(answer[label]))
             total += score
             # text format under :
             output_statement += (
-                    f"  * - **{answer_raw[label]['label']}**\n"
-                    f"    - {score * 100} % \n"
-                    #+ f"  * - correct \n"
-                    #  f"    - {correct}\n"
-                    #+ f"  * - incomplete \n"
-                    #  f"    - {incomplete}\n"
-                    #+ f"  * - over tolerance \n"
-                    #  f"    - {over_tolerance}\n"
-                    #+ f"  * - incorrect \n"
-                    #  f"    - {miss}\n"
-                    #+ f"  * - missing \n"
-                    #  f"    - {not_found}\n"
+                f"  * - **{answer_raw[label]['label']}**\n"
+                f"    - found : {found}/{len(answer[label])}\n"
+                f"    - {score * 100} % \n"
             )
-            output_statement += output_statement_ans_stud # TODO TEST
+            output_statement += output_statement_ans_stud  # TODO TEST
 
         total = total / len(answer)
-        output_statement = (f"The correction is by selection (a selection is each zone selected divided by backslash).\n\n"
-                            f"- correct : is the number of correct selection you have done \n\n"
-                            f"- incomplete: is the number of selection you have done that are almost correct, "
-                            f"but are missing essential elements\n\n"
-                            f"- over tolerance : are the selection you did that are too big, but have a correct selection in them"
-                            f"they only impact negatively you mark\n\n"
-                            f"- miss: is the number of selection you have done that don't intersect with any correct selection\n\n"
-                            f"- not found: is the number of selection done by the teacher you still need to find.\n\n\n"
-                            f".. list-table:: **{self.get_name()}** \r"
-                            f"  :widths: 10 10 \n"
-                            f"  :header-rows: 1\n\n"
-                            f"  * - Score \n"
-                            f"    - {total * 100} %\n") + output_statement
+        output_statement = (
+                               f"The correction is by selection (a selection is each zone selected divided by backslash).\n\n"
+                               f"- correct : is the number of correct selection you have done \n\n"
+                               f"- incomplete: is the number of selection you have done that are almost correct, "
+                               f"but are missing essential elements\n\n"
+                               f"- over tolerance : are the selection you did that are too big, but have a correct selection in them"
+                               f"they only impact negatively you mark\n\n"
+                               f"- miss: is the number of selection you have done that don't intersect with any correct selection\n\n"
+                               f"- not found: is the number of selection done by the teacher you still need to find.\n\n\n"
+                               f".. list-table:: **{self.get_name()}** \r"
+                               f"  :widths: 20 10 20\n"
+                               f"  :header-rows: 1\n\n"
+                               f"  * - Score \n"
+                               f"    - Status \n"
+                               f"    - comment \n") + output_statement
 
         if total >= 1:
             return True, output_statement, None, 0, "total = " + str(total) + "\n"
