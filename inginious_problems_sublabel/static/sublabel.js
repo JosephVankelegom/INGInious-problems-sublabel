@@ -73,9 +73,10 @@ class SubLabel{
         let lineNumbers = this.lineNumbers;
 
          for(let id in this.labelNameID){
-            this.createLabelText(id, this.highlightColor[id], false, this.pid, this.well)
+             this.createToleranceDiv(id, this.labelNameID[id], this.highlightColor[id], this.pid, this.well)
+            //this.createLabelText(id, this.highlightColor[id], false, this.pid, this.well)
             //this.createLabelContext(id, this.pid, this.well)
-            this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
+            //this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
         }
 
 
@@ -84,6 +85,7 @@ class SubLabel{
         //this.createEraseContext(this.pid, this.well)
         //contextMenuStart(this.textarea, this.pid, this.well)
 
+        //#$('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
         $('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
 
         // add the possibility of tabulation  change tab by 3 spaces.
@@ -235,10 +237,12 @@ class SubLabel{
 
     createLabelTeacher(pid, well){
         let color = colors[lengthDict(this.highlightValue)]
-        var id = "Label_id_" + lengthDict(this.highlightValue).toString(); // TODO a verifier dans le futur que ca ne fasse pas crash si creation + delete (trouver solution plus élégante)
-        this.createLabelText(id, color, false, pid, well)
+        var id = this.generateLabelID();
+        let name = $("#new_label_name").val()
+        this.createToleranceDiv(id, name, color, pid, well)
         //this.createLabelContext(id, pid, well)
-        this.highlightValue[id] = [];
+        this.labelNameID[id] = name
+        this.highlightValue[id] = []
         this.highlightColor[id] = color
 
     }
@@ -321,7 +325,7 @@ class SubLabel{
 
         labelDiv.append(inputGroupDiv)
 
-        this.createColoringButton(id, pid, color)
+        this.createColoringButton(id, $("#div-toolbar-"+pid), pid, color)
         // create coloring logo button
 
     }
@@ -404,7 +408,7 @@ class SubLabel{
         labelDiv.append(eraseLabel);
     }
 
-    createColoringButton(id, pid, color){
+    createColoringButton(id, outerdiv, pid, color){
         var coloring_button = document.createElement("button")
         coloring_button.setAttribute("type", "button")
         coloring_button.setAttribute("class", "btn btn-secondary")
@@ -416,8 +420,9 @@ class SubLabel{
         iconBrush.setAttribute("class", "fa fa-paint-brush");
 
         coloring_button.append(iconBrush)
-        $("#div-toolbar-"+pid).append(coloring_button)
+        outerdiv.append(coloring_button)
     }
+
 
     set_labelNameID(id, name,pid, well){
         this.labelNameID[id] = name;
@@ -666,10 +671,165 @@ class SubLabel{
         return indent;
     }
 
+    /**
+     * @param id : string defined in generateLabelID
+     * @param labelName : string of the label at the moment of creation.
+     * @param color : string linked to this label
+     * @param pid : string is the id of this problem
+     * @param well :
+     */
+    createToleranceDiv(id, labelName, color, pid, well){
+        let outerDiv = $('#div-tolerance-'+pid, well)
+
+        var cardDiv = document.createElement("div")
+        cardDiv.setAttribute("class", "card mb-3")
+        cardDiv.setAttribute("id", id)
+
+        // Header
+        var cardHeaderDiv = document.createElement("div")
+        cardHeaderDiv.setAttribute("class", "card-header")
+        cardHeaderDiv.setAttribute("style", "background-color: var(--"+color+"); ")
+        cardHeaderDiv.setAttribute("id", "heading_"+id)
+
+        var rowHeaderDivStruct = document.createElement("div")
+        rowHeaderDivStruct.setAttribute("class", "row")
+
+        var colHeaderDivName = document.createElement("div")
+        colHeaderDivName.setAttribute("class", "col-md-10")
+        var colHeaderSpanName = document.createElement("span")
+        colHeaderSpanName.setAttribute("role", "button")
+        colHeaderSpanName.setAttribute("data-toggle", "collapse")
+        colHeaderSpanName.setAttribute("data-parent", "#accordion")
+        colHeaderSpanName.setAttribute("href", "#collapse_"+id)
+        colHeaderSpanName.setAttribute("aria-controls", "collapse_"+id)
+        colHeaderSpanName.setAttribute("class", "")
+        colHeaderSpanName.setAttribute("aria-expanded", "true")
+        colHeaderSpanName.textContent = "Label name : "
+
+        var colHeaderSpanNameSecond = document.createElement("span")
+        colHeaderSpanNameSecond.textContent = labelName
+
+        // append headerDiv
+        cardDiv.append(cardHeaderDiv)
+        cardHeaderDiv.append(rowHeaderDivStruct)
+
+        colHeaderDivName.append(colHeaderSpanName)
+        colHeaderSpanName.append(colHeaderSpanNameSecond)
+
+        this.createCheckBox(id, rowHeaderDivStruct, pid, well)
+        rowHeaderDivStruct.append(colHeaderDivName)
+        this.createEraseLabelButton(id, rowHeaderDivStruct, pid, well, false);
+
+
+        // Body
+        var cardCollapse = document.createElement("div")
+        cardCollapse.setAttribute("class", "in collapse")
+        cardCollapse.setAttribute("id", "collapse_"+id)
+        cardCollapse.setAttribute("role", "tabpanel")
+        var cardBody = document.createElement("div")
+        cardBody.setAttribute("class", "card-body")
+
+        this.createToleranceChoice(id, cardBody, pid, color)
+
+        // Exclusion Elements
+        var exclusionDiv = document.createElement("div")
+        exclusionDiv.setAttribute("class", "row")
+
+
+        var addExclusionButton = document.createElement("button")
+        addExclusionButton.setAttribute("type", "button")
+        addExclusionButton.setAttribute("class", "btn btn-success")
+        addExclusionButton.onclick = ()=> {this.createExclusionFields("", exclusionDiv )}
+        addExclusionButton.textContent = "+"
+
+        cardBody.append(exclusionDiv)
+        cardBody.append(addExclusionButton)
 
 
 
 
+
+        cardCollapse.append(cardBody)
+        cardDiv.append(cardCollapse)
+        outerDiv.append(cardDiv)
+
+        this.createColoringButton(id,$("#div-toolbar-"+pid), pid, color)
+
+    }
+
+    createToleranceChoice(id, outerDiv, pid, well){
+        var generalDiv = document.createElement("div")
+        generalDiv.setAttribute("class", "input-group mb-3")
+
+        // name
+        var nameDiv = document.createElement("div")
+        nameDiv.setAttribute("class", "input-group-prepend")
+        var nameLabel = document.createElement("label")
+        nameLabel.setAttribute("class", "input-group-class")
+        nameLabel.innerText = "Tolerance : "
+
+        nameDiv.append(nameLabel)
+        // type
+        var typeDiv = document.createElement("select")
+        typeDiv.setAttribute("class", "custom-select")
+
+
+        generalDiv.append(nameDiv)
+        generalDiv.append(typeDiv)
+
+        outerDiv.append(generalDiv)
+
+    }
+
+    createExclusionFields(id, outerDiv, pid, well) {
+        var generaldiv = document.createElement("div")
+        generaldiv.setAttribute("class", "col-md-8")
+        var mediaDiv = document.createElement("div")
+        mediaDiv.setAttribute("class", "media g-mb-30 media-comment")
+
+        // Body
+        var mediaBody = document.createElement("div")
+        mediaBody.setAttribute("class", "media-body u-shadow-v18 g-bg-secondary g-pa-30")
+
+        var exclusionGarbage = document.createElement("ul")
+        exclusionGarbage.setAttribute("class", "list-inline d-sm flex my-0")
+        var exclusionGarbageLI = document.createElement("li")
+        exclusionGarbageLI.setAttribute("class", "u-link-v5 g-color-gray-dark-v4 g-color-primary--hover")
+        var exclusionGarbageIcon = document.createElement("i")
+        exclusionGarbageIcon.setAttribute("class", "fa fa-lg fa-trash-o")
+
+        mediaBody.append(exclusionGarbage)
+        exclusionGarbage.append(exclusionGarbageLI)
+        exclusionGarbageLI.append(exclusionGarbageIcon)
+
+        var exclusionTextArea = document.createElement("input")
+        mediaBody.append(exclusionTextArea)
+
+
+        // general
+        outerDiv.append(generaldiv)
+        generaldiv.append(mediaDiv)
+        mediaDiv.append(mediaBody)
+
+    }
+
+    generateLabelID() {
+        function extractNumber(label) {
+            const parts = label.split('_');
+            // The number is the last part of the split array
+            const numberPart = parts[parts.length - 1];
+            return parseInt(numberPart, 10);
+        }
+
+        let i = 0;
+        for (let key in this.labelNameID){
+            let val = extractNumber(key)
+            if(val >= i){
+                i = val + 1
+            }
+        }
+        return "Label_id_"+i.toString();
+    }
 
 }
 
