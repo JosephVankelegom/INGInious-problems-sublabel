@@ -233,6 +233,7 @@ class SubLabel{
             highListFormated.push({highlight: dataIntersections[label], className: this.highlightColor[label]})
         }
         this.textarea.highlightWithinTextarea({highlight : highListFormated})
+        this.textarea.trigger('input')
     }
 
     createLabelTeacher(pid, well){
@@ -791,21 +792,41 @@ class SubLabel{
         var mediaBody = document.createElement("div")
         mediaBody.setAttribute("class", "media-body u-shadow-v18 g-bg-secondary g-pa-30")
 
-        var exclusionGarbage = document.createElement("ul")
-        exclusionGarbage.setAttribute("class", "list-inline d-sm flex my-0")
+        var exclusionIconsUL = document.createElement("ul")
+        exclusionIconsUL.setAttribute("class", "list-inline d-sm-flex my-0")
+
+        var exclusionEditLI = document.createElement("li")
+        exclusionEditLI.setAttribute("class", "list-inline-item g-mr-20")
+        var exclusionEditA = document.createElement("A")
+        exclusionEditA.setAttribute("class", "u-link-v5 g-color-gray-dark-v4 g-color-primary--hover")
+        var exclusionEditIcon = document.createElement("i")
+        exclusionEditIcon.setAttribute("class", "fa fa-edit fa-fw")
+
         var exclusionGarbageLI = document.createElement("li")
-        exclusionGarbageLI.setAttribute("class", "u-link-v5 g-color-gray-dark-v4 g-color-primary--hover")
+        exclusionGarbageLI.setAttribute("class", "list-inline-item ml-auto")
+        var exclusionGarbageA = document.createElement("A")
+        exclusionGarbageA.setAttribute("class", "u-link-v5 g-color-gray-dark-v4 g-color-primary--hover")
         var exclusionGarbageIcon = document.createElement("i")
         exclusionGarbageIcon.setAttribute("class", "fa fa-lg fa-trash-o")
 
-        mediaBody.append(exclusionGarbage)
-        exclusionGarbage.append(exclusionGarbageLI)
-        exclusionGarbageLI.append(exclusionGarbageIcon)
+        mediaBody.append(exclusionIconsUL)
 
-        var exclusionTextArea = document.createElement("input")
-        mediaBody.append(exclusionTextArea)
+        exclusionIconsUL.append(exclusionEditLI)
+        exclusionIconsUL.append(exclusionGarbageLI)
 
+        exclusionEditLI.append(exclusionEditA)
+        exclusionEditA.append(exclusionEditIcon)
 
+        exclusionGarbageLI.append(exclusionGarbageA)
+        exclusionGarbageA.append(exclusionGarbageIcon)
+
+        var exclusionTextAreaDiv = document.createElement("div")
+        exclusionTextAreaDiv.setAttribute("class", "list-inline d-sm-flex my-0")
+        var exclusionTextArea = document.createElement("textarea")
+        exclusionTextArea.style.width = "100%"
+
+        mediaBody.append(exclusionTextAreaDiv)
+        exclusionTextAreaDiv.append(exclusionTextArea)
         // general
         outerDiv.append(generaldiv)
         generaldiv.append(mediaDiv)
