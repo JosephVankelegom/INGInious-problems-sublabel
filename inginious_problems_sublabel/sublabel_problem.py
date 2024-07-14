@@ -21,7 +21,7 @@ class SublabelProblem(Problem):
         self._header = content['header'] if "header" in content else ""
         self._answer = self.parse_answer(content.get("answer", ""))
         self._code = content['code'] if "code" in content else ""
-        self._tolerance = content['tolerance'] if "tolerance" in content else "line"
+        self._tolerance = content['tolerance'] if "tolerance" in content else ""
 
     @classmethod
     def get_type(cls):
@@ -40,6 +40,7 @@ class SublabelProblem(Problem):
         answer = {}
         answer_student = {}
         answer_tolerance = self.get_tolerance()  # TODO a implementer car pour le moment je laisse tout passer.
+        answer_exclusion = self.get_exclusion()
         code = self._code
         result_right = {}
         selection_found = {}
@@ -61,7 +62,8 @@ class SublabelProblem(Problem):
                 ans_clean = remove_symbol_list_from_answer([ans], code, symbols)
                 corr = verify_correspondence_strict(ans, ans_clean, answer[label], code, symbols)
                 tolerance = check_tolerance(ans_clean, answer_tolerance)
-                result_right[label][json.dumps(ans)] = [corr, tolerance]   # corr is all the sel that are intersected (0 if correct)
+                exclusion = "not implemented"
+                result_right[label][json.dumps(ans)] = [corr, tolerance, exclusion]   # corr is all the sel that are intersected (0 if correct)
 
         # Calcul du score total.
         for label in answer:
@@ -103,7 +105,7 @@ class SublabelProblem(Problem):
                 if len(result_right[label][ans][0]) == 0:
                     miss += 1
                     output_statement_ans_stud += f"    - 🚫 incorrect\n"
-                    output_statement_ans_stud += f"    - \n"
+                    output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
                 elif not result_right[label][ans][1]:
                     over_tolerance += 1
                     output_statement_ans_stud += f"    - 🟧 over_tolerance\n"
@@ -164,15 +166,30 @@ class SublabelProblem(Problem):
         return fields
 
     def get_tolerance(cls):
-        tolerance_type = cls._tolerance
-        match tolerance_type:
-            case "line":
-                return identify_lines(cls._code)
-            case "fix":
-                tolerance_size = 5
-                return fix_tolerance(cls._answer, tolerance_size)
-            case _:
-                return identify_lines(cls._code)
+        if cls._tolerance == "":
+            return {}
+        raw = json.loads(cls._tolerance)
+        tolerance = {}
+        for lid in raw:
+            match raw[lid]["type"]:
+                case "line":
+                    tolerance[lid] = identify_lines(cls._code)
+                case "fix":
+                    tolerance_size = 5
+                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size)
+                case _:
+                    tolerance[lid] = identify_lines(cls._code)
+
+
+
+    def get_exclusion(cls):
+        if cls._tolerance == "":
+            return {}
+        raw = json.loads(cls._tolerance)
+        exclusion = {}
+        for lid in raw:
+            exclusion[lid] = raw[lid]["exclusion"]
+        return exclusion
 
     def parse_answer(self, answer_raw):
         answer = json.loads(str(answer_raw))
@@ -340,6 +357,7 @@ def verify_correspondence_strict(interval, interval_clean, list_of_intervals, co
 
 
 def check_tolerance(interval_clean, tolerance_intervals):
+    return True     # TODO overhide the function
     for inter in interval_clean:
         is_in = False
         for tol in tolerance_intervals:
@@ -350,6 +368,7 @@ def check_tolerance(interval_clean, tolerance_intervals):
             return False
 
     return True
+
 
 
 class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):

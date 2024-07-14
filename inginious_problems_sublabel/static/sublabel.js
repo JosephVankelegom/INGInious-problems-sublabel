@@ -1,5 +1,6 @@
 
 let colors = ['yellow', 'blue', 'red', 'green']
+let tolerance_possibilities = ['line', '5 characters', '3 characters', '1 character', 'none']
 const eventReload = new CustomEvent("reloadAll");
 
 function load_input_sublabel(submissionid, key, input) {
@@ -23,8 +24,8 @@ function studio_init_template_sublabel(well, pid, problem)
     let labelNameID = {}
     let highlightColor = {}
     let highlightValue = {}
-    let textareasize = 0;
-
+    let textareasize = 0
+    let tolerance   = {}
 
     if("answer" in problem && problem["answer"] !== ""){
 
@@ -39,12 +40,18 @@ function studio_init_template_sublabel(well, pid, problem)
     }
 
     if("code" in problem){
-        textarea.val(problem["code"]);
+        textarea.val(problem["code"]);   // TODO initiation de code ici mieux vaut le faire plus tard quand subprobelem existe.
         textareasize = problem["code"].length
     }
 
+    if("tolerance" in problem){
+        if( problem["tolerance"] !== ""){
+            tolerance = JSON.parse(problem["tolerance"]) // Todo a remodifier plus tard
+        }
+    }
 
-    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher", lineNumbers);
+
+    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher", lineNumbers, tolerance);
     exercise.startTeacher();
 }
 
@@ -54,7 +61,7 @@ function load_feedback_sublabel(key, content) {
 
 class SubLabel{
 
-    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize, side, linenumbers) {
+    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize, side, linenumbers, tolerance) {
         this.pid            = pid
         this.well           = well
         this.textarea       = textarea;
@@ -66,6 +73,8 @@ class SubLabel{
         this.side           = side;
         this.lineNumbers    = linenumbers
         this.action         = "action"
+        this.tolerance      = tolerance
+        this.exclusionInfo = {}
     }
 
     startTeacher() {
@@ -78,10 +87,16 @@ class SubLabel{
             //this.createLabelContext(id, this.pid, this.well)
             //this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
         }
+         for(let lid in this.tolerance){
+             for(let eid in this.tolerance[lid]["exclusion"]){
+                 this.createExclusionFields(eid, lid, null, this.getToleranceExclusionValue(lid, eid, 0),  this.pid, this.well)
+
+             }
+         }
 
 
         var that = this;
-        this.createHighlightTextarea();
+        this.createHighlightTextarea(this.highlightValue);
         //this.createEraseContext(this.pid, this.well)
         //contextMenuStart(this.textarea, this.pid, this.well)
 
@@ -140,7 +155,10 @@ class SubLabel{
                 case "eraser":
                     this.highlightSelectionErase(this.pid, this.well)
                     break;
-                default:
+                case "exclusion":
+                    this.exclusionActivation()
+                    break;
+                default :
                     this.highlightSelection(this.action)
                     break;
             }
@@ -163,7 +181,7 @@ class SubLabel{
         }
 
 
-        this.createHighlightTextarea()
+        this.createHighlightTextarea(this.highlightValue)
         //this.createEraseContext(this.pid, this.well)
 
         this.answerarea.on('change', () => {
@@ -178,7 +196,7 @@ class SubLabel{
                 this.highlightColor[id] = answer[id]["color"]
                 this.highlightValue[id] = answer[id]["values"]
             }
-            this.createHighlightTextarea()
+            this.createHighlightTextarea(this.highlightValue)
         })
 
 
@@ -198,8 +216,12 @@ class SubLabel{
         this.textarea.on("select", () =>{
             switch(this.action){
                 case "stop": break;
+
                 case "eraser":
-                    this.highlightSelectionErase(this.pid, this.well)
+                    this.highlightSelectionErase(this.pid, this.well);
+                    break;
+
+                case "":
                     break;
                 default:
                     this.highlightSelection(this.action)
@@ -212,14 +234,14 @@ class SubLabel{
     }
 
     /**
-     *
+     * this.highlightValue as first argument
      */
 
-    createHighlightTextarea(){
+    createHighlightTextarea(highlightArray){
 
         // check the display box is checked
         let highlightValueChecked = {};
-        for(const [id, value]  of Object.entries(this.highlightValue)){
+        for(const [id, value]  of Object.entries(highlightArray)){
             if(this.isBoxChecked(id, this.pid, this.well)){
                 highlightValueChecked[id] = value
             }
@@ -233,7 +255,7 @@ class SubLabel{
             highListFormated.push({highlight: dataIntersections[label], className: this.highlightColor[label]})
         }
         this.textarea.highlightWithinTextarea({highlight : highListFormated})
-        this.textarea.trigger('input')
+        this.textarea.trigger('input')                                                  // TODO verifier que c'est pas de la merde ca, (genre que je trigger pas creteH en input et puis que je retrigger pq je trigger input ici)
     }
 
     createLabelTeacher(pid, well){
@@ -245,7 +267,7 @@ class SubLabel{
         this.labelNameID[id] = name
         this.highlightValue[id] = []
         this.highlightColor[id] = color
-
+        this.tolerance[id] = {}
     }
 
     eraseLabelTeacher(id, labelDiv){
@@ -271,65 +293,6 @@ class SubLabel{
         }
     }
 
-    createLabelStudent(id, name, color){
-        //this.createLabelContext(id);
-        this.highlightValue[id] = [];
-        this.highlightColor[id] = color;
-        this.labelNameID[id] = name;
-    }
-
-    createLabelContext(id, pid, well){
-        var li = document.createElement("li");
-        li.setAttribute("id", "context-menu-item_" + id+"-"+pid);
-        li.onclick =  ()=> {this.highlightSelection(id)}
-        var ul = $("#context-menu-ul-"+pid, well);
-        ul.append(li);
-    }
-
-    createEraseContext(pid, well){
-        var li = document.createElement("li");
-        li.setAttribute("id", "context-menu-erase_"+pid);
-        li.textContent = "erase"
-        li.onclick =  ()=> {this.highlightSelectionErase(pid, well)}
-        var ul = $("#context-menu-ul-"+pid, well);
-        ul.append(li);
-    }
-
-
-    /***
-     * Create Label Input Field
-     * @param id
-     * @param color
-     * @param isReadonly
-     * @param pid
-     * @param well
-     */
-    createLabelText(id, color, isReadonly, pid, well){
-
-        let labelDiv = $('#label-div-'+pid, well)
-
-        var inputGroupDiv = document.createElement("div")
-        inputGroupDiv.setAttribute("class", "input-group mb-3");
-
-        var labelNameArea = document.createElement("input");
-        labelNameArea.setAttribute("type", "text")
-        labelNameArea.setAttribute("id", "label-text_"+id+"-"+pid)
-        labelNameArea.setAttribute("placeholder", "Label name")
-        labelNameArea.setAttribute("style", "background-color: var(--"+color+");")
-        labelNameArea.setAttribute("class", "form-control")
-        if(isReadonly){labelNameArea.setAttribute("readonly", "true")}
-        else{labelNameArea.oninput = ()=> {this.updateLabel(id, labelNameArea)}}
-
-        this.createCheckBox(id, inputGroupDiv, pid, well);
-        inputGroupDiv.append(labelNameArea);
-        this.createEraseLabelButton(id, inputGroupDiv, pid, well, isReadonly);
-
-        labelDiv.append(inputGroupDiv)
-
-        this.createColoringButton(id, $("#div-toolbar-"+pid), pid, color)
-        // create coloring logo button
-
-    }
 
 
     updateLabel(id,labelNameArea) {
@@ -338,91 +301,17 @@ class SubLabel{
     }
 
 
-    /**
-     * create a checkbox that is linked to each label, with id define as checkbox_{{id from label}}-{{id of exercice}}
-     * @param id = id of the label.
-     * @param labelDiv
-     * @param pid
-     * @param well
-     */
-    createCheckBox(id, labelDiv, pid, well){
-
-        var inputPrependDiv = document.createElement("div")
-        inputPrependDiv.setAttribute("class", "input-group-prepend")
-
-        var inputTextDiv = document.createElement("div")
-        inputTextDiv.setAttribute("class", "input-group-text")
-
-        var checkBox = document.createElement("input")
-        checkBox.setAttribute("type", "checkbox")
-        checkBox.setAttribute("id", "checkbox_" + id +"-"+pid);
-        checkBox.setAttribute("checked", "checked");
-        checkBox.setAttribute("name", "checkbox");
-        checkBox.onclick = ()=> {this.updateHighlightTextArea(this.highlightValue)}
-
-        labelDiv.append(inputPrependDiv)
-        inputPrependDiv.append(inputTextDiv)
-        inputTextDiv.append(checkBox)
-
-    }
 
 
     getCheckBox(id, pid, well){
         return $("#checkbox_" + id +"-"+pid);
     }
+
     isBoxChecked(id,pid,well){
         return this.getCheckBox(id,pid,well).is(":checked");
     }
 
 
-    /**
-     * Create the Erase button that is linked to each label.
-     * @param id
-     * @param labelDiv
-     * @param pid
-     * @param well
-     * @param isReadonly
-     */
-    createEraseLabelButton(id, labelDiv, pid, well, isReadonly){
-
-        var inputGroupDiv = document.createElement("div");
-        inputGroupDiv.setAttribute("class", "input-group-append");
-
-        var eraseLabel = document.createElement("button");
-        eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid);
-        eraseLabel.setAttribute("class", "btn btn-danger")
-        eraseLabel.setAttribute("type", "button")
-
-        if(isReadonly){
-            eraseLabel.onclick = () => {this.eraseLabelStudent(id,labelDiv)}
-        }
-        else{
-            eraseLabel.onclick = () => {this.eraseLabelTeacher(id,labelDiv)}
-        }
-
-
-        var iconTrash = document.createElement("i");
-        iconTrash.setAttribute("class", "fa fa-lg fa-trash-o");
-
-        inputGroupDiv.append(eraseLabel);
-        eraseLabel.append(iconTrash);
-        labelDiv.append(eraseLabel);
-    }
-
-    createColoringButton(id, outerdiv, pid, color){
-        var coloring_button = document.createElement("button")
-        coloring_button.setAttribute("type", "button")
-        coloring_button.setAttribute("class", "btn btn-secondary")
-        coloring_button.setAttribute("id", "toolbar-coloring_"+id+"-"+pid)
-        coloring_button.setAttribute("style", "background-color: var(--"+color+");")
-        coloring_button.onclick = () => {this.set_action(id)}
-
-        var iconBrush = document.createElement("i");
-        iconBrush.setAttribute("class", "fa fa-paint-brush");
-
-        coloring_button.append(iconBrush)
-        outerdiv.append(coloring_button)
-    }
 
 
     set_labelNameID(id, name,pid, well){
@@ -467,7 +356,7 @@ class SubLabel{
      */
     updateHighlightTextArea(){
         this.textarea.highlightWithinTextarea('destroy');
-        this.createHighlightTextarea()
+        this.createHighlightTextarea(this.highlightValue)
     }
 
 
@@ -511,9 +400,11 @@ class SubLabel{
      *
      * Utils for arrays
      *
+     * @param start : int is the value in the textarea where the selection begins
+     * @param end : int is the value int the textarea where the selection ends
+     * @param array : array is and array of array where each interior array in a selection
      *
-     *
-     *
+     * this function will add the start and end to the array of array (there are no intersection, if two selection intersect they become one)
      ***/
 
     updateArray(start, end, array){  // TODO need to add when 0-6 6-9 => 0-9
@@ -630,8 +521,8 @@ class SubLabel{
     }
 
     /**
-     * @param ranges are a list of lists representing intervals
-     * @param excludeRange is one list representing all the values that if they intersect with ranges to remove from ranges.
+     * @param ranges : array of intervals
+     * @param excludeRange : array with one interval that need to be erased from array if some of the values are present.
      */
     removeFromArray(ranges, excludeRange){
         let result = [[]];
@@ -672,25 +563,275 @@ class SubLabel{
         return indent;
     }
 
+    GetExclusionId(pid, labelID, RandomNumberExclusion){
+        return pid+"_"+labelID+"_"+RandomNumberExclusion
+    }
+
+
     /**
-     * @param id : string defined in generateLabelID
-     * @param labelName : string of the label at the moment of creation.
-     * @param color : string linked to this label
-     * @param pid : string is the id of this problem
+     * this.tolerance[labelID]["exclusion"][Eid] is an array with index:
+     *  0 : comment
+     *  1 : selection
+     *
+     * **/
+    ExclusionInputComment(pid, labelID, idExclusion){
+        let val = $("#comment_"+idExclusion).val()
+        this.setToleranceExclusionNewValue(labelID, idExclusion, 0, val)
+    }
+
+
+    checkToleranceExclusionExist(labelID,idExclusion,index){
+        if(!(labelID in this.tolerance)){
+            this.tolerance[labelID] = {"exclusion":{}, "type":"line"}}
+        if(!(idExclusion in this.tolerance[labelID]["exclusion"])){
+            this.tolerance[labelID]["exclusion"][idExclusion] = ["", [[]]]}  // TODO array d'array ? selection
+    }
+    setToleranceExclusionNewValue(labelID,idExclusion,index, value){
+        this.checkToleranceExclusionExist(labelID, idExclusion, index)
+        this.tolerance[labelID]["exclusion"][idExclusion][index] = value
+        $("#tolerance-" + this.pid).val(JSON.stringify(this.tolerance))
+    }
+    getToleranceExclusionValue(labelID,idExclusion,index){
+        this.checkToleranceExclusionExist(labelID, idExclusion, index)
+        return this.tolerance[labelID]["exclusion"][idExclusion][index]
+    }
+
+
+
+
+    exclusionActivation(){
+        this.exclusionSelection(this.exclusionInfo["erase"], this.pid, this.exclusionInfo["labelID"], this.exclusionInfo["exclusionID"])
+    }
+    /**
+     *
+     * @param selection : array of two elements with start and finish of the new selected elements
+     * @param erase : boolean value indicating if we are erasing those elements from the list
+     * @param pid :
+     * @param labelID :
+     * @param exclusionID :
+     * @constructor
+     */
+    exclusionSelection(erase, pid, labelID, exclusionID){
+        let start   = this.textarea[0].selectionStart
+        let end     = this.textarea[0].selectionEnd
+        if(erase){
+            let newVal = this.removeFromArray(this.getToleranceExclusionValue(labelID, exclusionID, 1), [start, end])
+            this.setToleranceExclusionNewValue(labelID, exclusionID, 1, newVal)
+        }
+        else{
+            let newVal = this.updateArray(start, end, this.getToleranceExclusionValue(labelID, exclusionID, 1))
+            this.setToleranceExclusionNewValue(labelID, exclusionID, 1, newVal)
+        }
+
+        let dictToH = {}
+        let color = {}
+        for(let Eid in this.tolerance[labelID]["exclusion"]){
+            dictToH[Eid] = this.tolerance[labelID]["exclusion"][Eid][1]
+            color[Eid] = "red"
+        }
+        this.highlightTextareaArray(dictToH, color)
+    }
+
+    createNewExclusion(labelid, exclusionDiv, pid, well){
+        let Eid = this.GetExclusionId(pid, labelid, generateRandomID())
+        this.createExclusionFields(Eid, labelid, exclusionDiv, "", pid, well)
+    }
+
+
+    highlightTextareaArray(dict, colors){
+        let highListFormated = [];
+        for(let label in dict){
+            highListFormated.push({highlight: dict[label], className: colors[label]})
+        }
+        this.textarea.highlightWithinTextarea('destroy')
+        this.textarea.highlightWithinTextarea({highlight : highListFormated})
+    }
+
+    exclusionVariableHandler(erase, labelid, Eid){
+            this.action = "exclusion"
+            this.exclusionInfo["erase"] = false
+            this.exclusionInfo["labelID"] = labelid
+            this.exclusionInfo["exclusionID"] = Eid
+    }
+
+
+    getExclusionDiv(lid, pid){
+        return "exclusionDiv_"+lid+"_"+pid
+    }
+
+
+
+
+
+
+    /////////////////////////////////////
+    /////////////////////////////////////
+    // Generate HTML From JS
+    /////////////////////////////////////
+    /////////////////////////////////////
+
+
+
+    createLabelStudent(id, name, color){
+        //this.createLabelContext(id);
+        this.highlightValue[id] = [];
+        this.highlightColor[id] = color;
+        this.labelNameID[id] = name;
+    }
+
+    createLabelContext(id, pid, well){
+        var li = document.createElement("li");
+        li.setAttribute("id", "context-menu-item_" + id+"-"+pid);
+        li.onclick =  ()=> {this.highlightSelection(id)}
+        var ul = $("#context-menu-ul-"+pid, well);
+        ul.append(li);
+    }
+
+    createEraseContext(pid, well){
+        var li = document.createElement("li");
+        li.setAttribute("id", "context-menu-erase_"+pid);
+        li.textContent = "erase"
+        li.onclick =  ()=> {this.highlightSelectionErase(pid, well)}
+        var ul = $("#context-menu-ul-"+pid, well);
+        ul.append(li);
+    }
+
+
+    /***
+     * Create Label Input Field
+     * @param id
+     * @param color
+     * @param isReadonly
+     * @param pid
+     * @param well
+     */
+    createLabelText(id, color, isReadonly, pid, well){
+
+        let labelDiv = $('#label-div-'+pid, well)
+
+        var inputGroupDiv = document.createElement("div")
+        inputGroupDiv.setAttribute("class", "input-group mb-3");
+
+        var labelNameArea = document.createElement("input");
+        labelNameArea.setAttribute("type", "text")
+        labelNameArea.setAttribute("id", "label-text_"+id+"-"+pid)
+        labelNameArea.setAttribute("placeholder", "Label name")
+        labelNameArea.setAttribute("style", "background-color: var(--"+color+");")
+        labelNameArea.setAttribute("class", "form-control")
+        if(isReadonly){labelNameArea.setAttribute("readonly", "true")}
+        else{labelNameArea.oninput = ()=> {this.updateLabel(id, labelNameArea)}}
+
+        this.createCheckBox(id, inputGroupDiv, pid, well);
+        inputGroupDiv.append(labelNameArea);
+        this.createEraseLabelButton(id, inputGroupDiv, pid, well, isReadonly);
+
+        labelDiv.append(inputGroupDiv)
+
+        this.createColoringButton(id, $("#div-toolbar-"+pid), pid, color)
+        // create coloring logo button
+
+    }
+
+
+    /**
+     * create a checkbox that is linked to each label, with id define as checkbox_{{id from label}}-{{id of exercice}}
+     * @param id = id of the label.
+     * @param labelDiv
+     * @param pid
+     * @param well
+     */
+    createCheckBox(id, labelDiv, pid, well){
+
+        var inputPrependDiv = document.createElement("div")
+        inputPrependDiv.setAttribute("class", "input-group-prepend")
+
+        var inputTextDiv = document.createElement("div")
+        inputTextDiv.setAttribute("class", "input-group-text")
+
+        var checkBox = document.createElement("input")
+        checkBox.setAttribute("type", "checkbox")
+        checkBox.setAttribute("id", "checkbox_" + id +"-"+pid);
+        checkBox.setAttribute("checked", "checked");
+        checkBox.setAttribute("name", "checkbox");
+        checkBox.onclick = ()=> {this.updateHighlightTextArea(this.highlightValue)}
+
+        labelDiv.append(inputPrependDiv)
+        inputPrependDiv.append(inputTextDiv)
+        inputTextDiv.append(checkBox)
+
+    }
+
+
+
+    /**
+     * Create the Erase button that is linked to each label.
+     * @param id
+     * @param labelDiv
+     * @param pid
+     * @param well
+     * @param isReadonly
+     */
+    createEraseLabelButton(id, labelDiv, pid, well, isReadonly){
+
+        var inputGroupDiv = document.createElement("div");
+        inputGroupDiv.setAttribute("class", "input-group-append");
+
+        var eraseLabel = document.createElement("button");
+        eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid);
+        eraseLabel.setAttribute("class", "btn btn-danger")
+        eraseLabel.setAttribute("type", "button")
+
+        if(isReadonly){
+            eraseLabel.onclick = () => {this.eraseLabelStudent(id,labelDiv)}
+        }
+        else{
+            eraseLabel.onclick = () => {this.eraseLabelTeacher(id,labelDiv)}
+        }
+
+
+        var iconTrash = document.createElement("i");
+        iconTrash.setAttribute("class", "fa fa-lg fa-trash-o");
+
+        inputGroupDiv.append(eraseLabel);
+        eraseLabel.append(iconTrash);
+        labelDiv.append(eraseLabel);
+    }
+
+    createColoringButton(id, outerdiv, pid, color){
+        var coloring_button = document.createElement("button")
+        coloring_button.setAttribute("type", "button")
+        coloring_button.setAttribute("class", "btn btn-secondary")
+        coloring_button.setAttribute("id", "toolbar-coloring_"+id+"-"+pid)
+        coloring_button.setAttribute("style", "background-color: var(--"+color+");")
+        coloring_button.onclick = () => {this.set_action(id)}
+
+        var iconBrush = document.createElement("i");
+        iconBrush.setAttribute("class", "fa fa-paint-brush");
+
+        coloring_button.append(iconBrush)
+        outerdiv.append(coloring_button)
+    }
+
+
+    /**
+     * @param labelid : string : id of the defined in generateLabelID
+     * @param labelName : string : name of the label at the moment of creation.
+     * @param color : string :color linked to this label
+     * @param pid : string :the id of this problem
      * @param well :
      */
-    createToleranceDiv(id, labelName, color, pid, well){
+    createToleranceDiv(labelid, labelName, color, pid, well){
         let outerDiv = $('#div-tolerance-'+pid, well)
 
         var cardDiv = document.createElement("div")
         cardDiv.setAttribute("class", "card mb-3")
-        cardDiv.setAttribute("id", id)
+        cardDiv.setAttribute("id", labelid)
 
         // Header
         var cardHeaderDiv = document.createElement("div")
         cardHeaderDiv.setAttribute("class", "card-header")
         cardHeaderDiv.setAttribute("style", "background-color: var(--"+color+"); ")
-        cardHeaderDiv.setAttribute("id", "heading_"+id)
+        cardHeaderDiv.setAttribute("id", "heading_"+labelid)
 
         var rowHeaderDivStruct = document.createElement("div")
         rowHeaderDivStruct.setAttribute("class", "row")
@@ -701,8 +842,8 @@ class SubLabel{
         colHeaderSpanName.setAttribute("role", "button")
         colHeaderSpanName.setAttribute("data-toggle", "collapse")
         colHeaderSpanName.setAttribute("data-parent", "#accordion")
-        colHeaderSpanName.setAttribute("href", "#collapse_"+id)
-        colHeaderSpanName.setAttribute("aria-controls", "collapse_"+id)
+        colHeaderSpanName.setAttribute("href", "#collapse_"+labelid)
+        colHeaderSpanName.setAttribute("aria-controls", "collapse_"+labelid)
         colHeaderSpanName.setAttribute("class", "")
         colHeaderSpanName.setAttribute("aria-expanded", "true")
         colHeaderSpanName.textContent = "Label name : "
@@ -717,44 +858,43 @@ class SubLabel{
         colHeaderDivName.append(colHeaderSpanName)
         colHeaderSpanName.append(colHeaderSpanNameSecond)
 
-        this.createCheckBox(id, rowHeaderDivStruct, pid, well)
+        this.createCheckBox(labelid, rowHeaderDivStruct, pid, well)
         rowHeaderDivStruct.append(colHeaderDivName)
-        this.createEraseLabelButton(id, rowHeaderDivStruct, pid, well, false);
+        this.createEraseLabelButton(labelid, rowHeaderDivStruct, pid, well, false);
 
 
         // Body
         var cardCollapse = document.createElement("div")
         cardCollapse.setAttribute("class", "in collapse")
-        cardCollapse.setAttribute("id", "collapse_"+id)
+        cardCollapse.setAttribute("id", "collapse_"+labelid)
         cardCollapse.setAttribute("role", "tabpanel")
         var cardBody = document.createElement("div")
         cardBody.setAttribute("class", "card-body")
 
-        this.createToleranceChoice(id, cardBody, pid, color)
+        this.createToleranceChoice(labelid, cardBody, pid, color)
 
         // Exclusion Elements
         var exclusionDiv = document.createElement("div")
         exclusionDiv.setAttribute("class", "row")
+        exclusionDiv.setAttribute("id", this.getExclusionDiv(labelid,pid))
 
 
+        // button add (exclusion selection)
         var addExclusionButton = document.createElement("button")
         addExclusionButton.setAttribute("type", "button")
         addExclusionButton.setAttribute("class", "btn btn-success")
-        addExclusionButton.onclick = ()=> {this.createExclusionFields("", exclusionDiv )}
+        addExclusionButton.onclick = ()=> {this.createNewExclusion(labelid, exclusionDiv , pid, well)}
         addExclusionButton.textContent = "+"
 
         cardBody.append(exclusionDiv)
         cardBody.append(addExclusionButton)
 
 
-
-
-
         cardCollapse.append(cardBody)
         cardDiv.append(cardCollapse)
         outerDiv.append(cardDiv)
 
-        this.createColoringButton(id,$("#div-toolbar-"+pid), pid, color)
+        this.createColoringButton(labelid,$("#div-toolbar-"+pid), pid, color)
 
     }
 
@@ -770,10 +910,18 @@ class SubLabel{
         nameLabel.innerText = "Tolerance : "
 
         nameDiv.append(nameLabel)
-        // type
+
+        // Tolerance Type Selector
         var typeDiv = document.createElement("select")
         typeDiv.setAttribute("class", "custom-select")
 
+        // types
+        for(let type in tolerance_possibilities){
+            let choice = document.createElement("option")
+            choice.setAttribute("value", tolerance_possibilities[type])
+            choice.innerText = tolerance_possibilities[type]
+            typeDiv.append(choice)
+        }
 
         generalDiv.append(nameDiv)
         generalDiv.append(typeDiv)
@@ -782,7 +930,10 @@ class SubLabel{
 
     }
 
-    createExclusionFields(id, outerDiv, pid, well) {
+    createExclusionFields(Eid, labelid, outerDiv, comment, pid, well) {
+        if(outerDiv === null){
+            outerDiv = document.getElementById(this.getExclusionDiv(labelid, pid))
+        }
         var generaldiv = document.createElement("div")
         generaldiv.setAttribute("class", "col-md-8")
         var mediaDiv = document.createElement("div")
@@ -795,12 +946,18 @@ class SubLabel{
         var exclusionIconsUL = document.createElement("ul")
         exclusionIconsUL.setAttribute("class", "list-inline d-sm-flex my-0")
 
+
+        // coloring button
         var exclusionEditLI = document.createElement("li")
         exclusionEditLI.setAttribute("class", "list-inline-item g-mr-20")
         var exclusionEditA = document.createElement("A")
-        exclusionEditA.setAttribute("class", "u-link-v5 g-color-gray-dark-v4 g-color-primary--hover")
+        exclusionEditA.setAttribute("class", "u-link-v5  g-color-primary--hover")
         var exclusionEditIcon = document.createElement("i")
-        exclusionEditIcon.setAttribute("class", "fa fa-edit fa-fw")
+        exclusionEditIcon.setAttribute("class", "fa fa-paint-brush")
+        exclusionEditA.style.color = "red"
+        exclusionEditA.onclick = this.exclusionVariableHandler.bind(this,false, labelid, Eid)
+
+
 
         var exclusionGarbageLI = document.createElement("li")
         exclusionGarbageLI.setAttribute("class", "list-inline-item ml-auto")
@@ -808,6 +965,7 @@ class SubLabel{
         exclusionGarbageA.setAttribute("class", "u-link-v5 g-color-gray-dark-v4 g-color-primary--hover")
         var exclusionGarbageIcon = document.createElement("i")
         exclusionGarbageIcon.setAttribute("class", "fa fa-lg fa-trash-o")
+
 
         mediaBody.append(exclusionIconsUL)
 
@@ -824,6 +982,9 @@ class SubLabel{
         exclusionTextAreaDiv.setAttribute("class", "list-inline d-sm-flex my-0")
         var exclusionTextArea = document.createElement("textarea")
         exclusionTextArea.style.width = "100%"
+        exclusionTextArea.oninput = this.ExclusionInputComment.bind(this, pid, labelid, Eid)
+        exclusionTextArea.setAttribute("id", "comment_"+Eid)
+        exclusionTextArea.value = comment
 
         mediaBody.append(exclusionTextAreaDiv)
         exclusionTextAreaDiv.append(exclusionTextArea)
@@ -896,4 +1057,8 @@ function lengthDict(dictionary){
     }
     return count
 }
+
+function generateRandomID(){
+        return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    }
 
