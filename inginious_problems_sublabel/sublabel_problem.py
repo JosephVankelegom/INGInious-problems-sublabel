@@ -35,12 +35,13 @@ class SublabelProblem(Problem):
 
     def check_answer(self, task_input, language):
         symbols = [" "]
+        all_labels = self._answer.keys()
         answer_raw = self._answer
         answer_student_raw = json.loads(task_input[self.get_id()])
         answer = {}
         answer_student = {}
         answer_tolerance = self.get_tolerance()  # TODO a implementer car pour le moment je laisse tout passer.
-        answer_exclusion = self.get_exclusion()
+        answer_exclusion = self.get_exclusion(all_labels)
         code = self._code
         result_right = {}
         selection_found = {}
@@ -62,8 +63,9 @@ class SublabelProblem(Problem):
                 ans_clean = remove_symbol_list_from_answer([ans], code, symbols)
                 corr = verify_correspondence_strict(ans, ans_clean, answer[label], code, symbols)
                 tolerance = check_tolerance(ans_clean, answer_tolerance)
-                exclusion = "not implemented"
-                result_right[label][json.dumps(ans)] = [corr, tolerance, exclusion]   # corr is all the sel that are intersected (0 if correct)
+                exclusion = check_exclusion(ans_clean, answer_exclusion[label])
+                result_right[label][json.dumps(ans)] = [corr, tolerance,
+                                                        exclusion]  # corr is all the sel that are intersected (0 if correct)
 
         # Calcul du score total.
         for label in answer:
@@ -180,13 +182,13 @@ class SublabelProblem(Problem):
                 case _:
                     tolerance[lid] = identify_lines(cls._code)
 
-
-
-    def get_exclusion(cls):
-        if cls._tolerance == "":
-            return {}
-        raw = json.loads(cls._tolerance)
+    def get_exclusion(cls, all_labels):
         exclusion = {}
+        for lab in all_labels:
+            exclusion[lab] = {}
+        if cls._tolerance == "":
+            return exclusion
+        raw = json.loads(cls._tolerance)
         for lid in raw:
             exclusion[lid] = raw[lid]["exclusion"]
         return exclusion
@@ -356,8 +358,16 @@ def verify_correspondence_strict(interval, interval_clean, list_of_intervals, co
 """
 
 
+def at_least_one_intersection(array1, array2):
+    for interval1 in array1:
+        for interval2 in array2:
+            if intersect(interval1, interval2):
+                return True
+    return False
+
+
 def check_tolerance(interval_clean, tolerance_intervals):
-    return True     # TODO overhide the function
+    return True  # TODO overhide the function
     for inter in interval_clean:
         is_in = False
         for tol in tolerance_intervals:
@@ -369,6 +379,13 @@ def check_tolerance(interval_clean, tolerance_intervals):
 
     return True
 
+
+def check_exclusion(interval_clean, exclusion_intervals):
+    result = ""
+    for excl in exclusion_intervals:
+        if at_least_one_intersection(interval_clean, exclusion_intervals[excl][1]):
+            result += exclusion_intervals[excl][0]
+    return result
 
 
 class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
