@@ -85,6 +85,7 @@
         let highlightValue = {};
         let labelNameID = {};
         let highlightColor = {};
+        let code = {{ code }}
 
         for (const [id, value] of Object.entries(dataExercise)) {
             labelNameID[id] = value["label"];
@@ -92,7 +93,7 @@
 
         }
 
-        let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, "{{ inputId }}", null, 0, "student", lineNumbers);
+        let exercise = new SubLabel(code, textarea, answerarea, highlightValue, labelNameID, highlightColor, "{{ inputId }}", null, 0, "student", lineNumbers);
         //contextMenuStart(textarea, "{{ inputId }}", null)
         exercise.startStudent();
         answerarea.trigger('change')

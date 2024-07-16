@@ -2,10 +2,6 @@
 {# more information about the licensing of this file. #}
 
 
-<style>
-
-</style>
-
 
 
 
@@ -24,7 +20,7 @@
         <div class="container mt-5">
             <div class="textarea-container">
                 <div class="line-numbers" id="line_code-PID"></div>
-                <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea"></textarea>
+                <textarea id="code-PID" name="problem[PID][code]" class="form-control custom-textarea" style="overflow: hidden; resize: none; scrollbar-width: none;"></textarea>
             </div>
         </div>
     </div>
@@ -53,17 +49,6 @@
 </div>
 
 
-{# Tolerance #}
-<div class="input-group mb-3">
-    <div class="input-group-prepend">
-        <label class="input-group-text" for="inputGroupSelect01">Tolerance</label>
-    </div>
-    <select class="custom-select-lg" id="inputGroupSelect01">
-        <option value ="0">line</option>
-        <option value="1">fixed</option>
-    </select>
-</div>
-
 {# NEW #}
 <div class="mb-3">
     <div class="tab-content" >
@@ -82,7 +67,7 @@
             </div>
         </div>
     </div>
-    <input type="text" class="form-control" id="tolerance-PID" name="problem[PID][tolerance]"/>
+    <input type="text" class="form-control" id="tolerance-PID" name="problem[PID][tolerance]" hidden/>
 </div>
 {# Answer, use to store the answer from the student #}
 <div class="form-group row">

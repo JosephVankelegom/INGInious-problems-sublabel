@@ -40,7 +40,7 @@ class SublabelProblem(Problem):
         answer_student_raw = json.loads(task_input[self.get_id()])
         answer = {}
         answer_student = {}
-        answer_tolerance = self.get_tolerance()  # TODO a implementer car pour le moment je laisse tout passer.
+        answer_tolerance = self.get_tolerance()
         answer_exclusion = self.get_exclusion(all_labels)
         code = self._code
         result_right = {}
@@ -62,7 +62,7 @@ class SublabelProblem(Problem):
             for ans in answer_student[label]:
                 ans_clean = remove_symbol_list_from_answer([ans], code, symbols)
                 corr = verify_correspondence_strict(ans, ans_clean, answer[label], code, symbols)
-                tolerance = check_tolerance(ans_clean, answer_tolerance)
+                tolerance = check_tolerance(ans_clean, answer_tolerance[label])
                 exclusion = check_exclusion(ans_clean, answer_exclusion[label])
                 result_right[label][json.dumps(ans)] = [corr, tolerance,
                                                         exclusion]  # corr is all the sel that are intersected (0 if correct)
@@ -110,7 +110,7 @@ class SublabelProblem(Problem):
                     output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
                 elif not result_right[label][ans][1]:
                     over_tolerance += 1
-                    output_statement_ans_stud += f"    - 🟧 over_tolerance\n"
+                    output_statement_ans_stud += f"    - 🟧 too large\n"
                     output_statement_ans_stud += f"    - \n"
                 else:
                     is_corr = False
@@ -176,11 +176,18 @@ class SublabelProblem(Problem):
             match raw[lid]["type"]:
                 case "line":
                     tolerance[lid] = identify_lines(cls._code)
-                case "fix":
+                case "5 characters":
                     tolerance_size = 5
-                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size)
+                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
+                case "3 characters":
+                    tolerance_size = 3
+                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
+                case "1 character":
+                    tolerance_size = 1
+                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
                 case _:
                     tolerance[lid] = identify_lines(cls._code)
+        return tolerance
 
     def get_exclusion(cls, all_labels):
         exclusion = {}
@@ -287,12 +294,10 @@ def identify_lines(code):
     return result
 
 
-def fix_tolerance(answer, tolerance):
+def fix_tolerance(answer, tolerance, lid):
     result = []
-    for label in answer:
-        for ans in answer[label]['values']:
-            result.append([ans[0] - tolerance, ans[1] + tolerance])
-
+    for ans in answer[lid]['values']:
+        result.append([ans[0] - tolerance, ans[1] + tolerance])
     return result
 
 
@@ -367,7 +372,6 @@ def at_least_one_intersection(array1, array2):
 
 
 def check_tolerance(interval_clean, tolerance_intervals):
-    return True  # TODO overhide the function
     for inter in interval_clean:
         is_in = False
         for tol in tolerance_intervals:

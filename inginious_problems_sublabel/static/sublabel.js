@@ -17,6 +17,7 @@ function load_input_sublabel(submissionid, key, input) {
 
 function studio_init_template_sublabel(well, pid, problem)
 {
+    let code = ""
     let textarea = $('#code-' + pid, well)
     let answerarea = $('#answer-' + pid, well)
     let lineNumbers = $("#line_code-" + pid, well);
@@ -40,7 +41,7 @@ function studio_init_template_sublabel(well, pid, problem)
     }
 
     if("code" in problem){
-        textarea.val(problem["code"]);   // TODO initiation de code ici mieux vaut le faire plus tard quand subprobelem existe.
+        code = problem["code"]
         textareasize = problem["code"].length
     }
 
@@ -51,7 +52,7 @@ function studio_init_template_sublabel(well, pid, problem)
     }
 
 
-    let exercise = new SubLabel(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher", lineNumbers, tolerance);
+    let exercise = new SubLabel(code, textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, "teacher", lineNumbers, tolerance);
     exercise.startTeacher();
 }
 
@@ -61,7 +62,8 @@ function load_feedback_sublabel(key, content) {
 
 class SubLabel{
 
-    constructor(textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well,textareasize, side, linenumbers, tolerance) {
+    constructor(code, textarea, answerarea, highlightValue, labelNameID, highlightColor, pid, well, textareasize, side, linenumbers, tolerance) {
+        this.code           = code
         this.pid            = pid
         this.well           = well
         this.textarea       = textarea;
@@ -80,23 +82,26 @@ class SubLabel{
     startTeacher() {
 
         let lineNumbers = this.lineNumbers;
+        this.textarea.val(this.code)
 
-         for(let id in this.labelNameID){
-             this.createToleranceDiv(id, this.labelNameID[id], this.highlightColor[id], this.pid, this.well)
-            //this.createLabelText(id, this.highlightColor[id], false, this.pid, this.well)
-            //this.createLabelContext(id, this.pid, this.well)
-            //this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
+         for(let lid in this.labelNameID){
+             this.createToleranceDiv(lid, this.labelNameID[lid], this.highlightColor[lid], this.pid, this.well)
+             this.changeSelectorValue(lid, this.pid, this.getToleranceTypeValue(lid))
+            //this.createLabelText(lid, this.highlightColor[lid], false, this.pid, this.well)
+            //this.createLabelContext(lid, this.pid, this.well)
+            //this.set_labelNameID(lid, this.labelNameID[lid], this.pid, this.well)
         }
          for(let lid in this.tolerance){
              for(let eid in this.tolerance[lid]["exclusion"]){
                  this.createExclusionFields(eid, lid, null, this.getToleranceExclusionValue(lid, eid, 0),  this.pid, this.well)
-
              }
          }
+         this.updateToleranceFieldInput()
 
 
         var that = this;
         this.createHighlightTextarea(this.highlightValue);
+
         //this.createEraseContext(this.pid, this.well)
         //contextMenuStart(this.textarea, this.pid, this.well)
 
@@ -139,14 +144,18 @@ class SubLabel{
         }
         );
 
+
         this.textarea.on('input', function() {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
+            if(this.scrollHeight === 0){
+                var lineHeight = 22; // Adjust based on your actual line height
+                var numLine = this.value.split('\n').length;
+                this.style.height = (numLine * lineHeight) + 23 + 'px'
+
+            }
         });
-        this.textarea.on('click', function() {
-            this.style.height = 'auto';
-            this.style.height = this.scrollHeight + 'px';
-        });
+
         // Initial line numbers generation
 
         this.textarea.on("select", () =>{
@@ -167,6 +176,9 @@ class SubLabel{
 
         $("#toolbar-eraser-"+this.pid).on("click", () => this.set_action("eraser"))
         $("#toolbar-stop-"+this.pid).on("click", () => this.set_action("stop"))
+
+        $(document).ready(() => this.textarea.trigger('input'))
+
 
     }
 
@@ -392,6 +404,7 @@ class SubLabel{
 
     set_action(val){
         this.action = val;
+        this.updateHighlightTextArea(this.highlightValue)
     }
 
     /**
@@ -586,16 +599,37 @@ class SubLabel{
         if(!(idExclusion in this.tolerance[labelID]["exclusion"])){
             this.tolerance[labelID]["exclusion"][idExclusion] = ["", [[]]]}  // TODO array d'array ? selection
     }
+    checkToleranceTypeExist(labelID){
+        if(!(labelID in this.tolerance)){
+            this.tolerance[labelID] = {"exclusion":{}, "type":"line"}}
+    }
     setToleranceExclusionNewValue(labelID,idExclusion,index, value){
         this.checkToleranceExclusionExist(labelID, idExclusion, index)
         this.tolerance[labelID]["exclusion"][idExclusion][index] = value
-        $("#tolerance-" + this.pid).val(JSON.stringify(this.tolerance))
+        this.updateToleranceFieldInput()
     }
     getToleranceExclusionValue(labelID,idExclusion,index){
         this.checkToleranceExclusionExist(labelID, idExclusion, index)
         return this.tolerance[labelID]["exclusion"][idExclusion][index]
     }
 
+    setToleranceTypeNewValue(labelID, value){
+        this.checkToleranceTypeExist(labelID)
+        this.tolerance[labelID]["type"] = value
+        this.updateToleranceFieldInput()
+    }
+    createToleranceTypeNewValue(labelID){
+        this.checkToleranceTypeExist(labelID)
+        this.updateToleranceFieldInput()
+    }
+    getToleranceTypeValue(labelID){
+        this.checkToleranceTypeExist(labelID)
+        return this.tolerance[labelID]["type"]
+    }
+
+    updateToleranceFieldInput(){
+        $("#tolerance-" + this.pid).val(JSON.stringify(this.tolerance))
+    }
 
 
 
@@ -623,13 +657,20 @@ class SubLabel{
             this.setToleranceExclusionNewValue(labelID, exclusionID, 1, newVal)
         }
 
+        this.createExclusionHighlight(labelID, exclusionID)
+    }
+
+    createExclusionHighlight(labelID, exclusionID){
         let dictToH = {}
         let color = {}
-        for(let Eid in this.tolerance[labelID]["exclusion"]){
-            dictToH[Eid] = this.tolerance[labelID]["exclusion"][Eid][1]
-            color[Eid] = "red"
-        }
+        dictToH[exclusionID] = this.tolerance[labelID]["exclusion"][exclusionID][1]
+        color[exclusionID] = "red"
+        //for(let Eid in this.tolerance[labelID]["exclusion"]){
+        //    dictToH[Eid] = this.tolerance[labelID]["exclusion"][Eid][1]
+        //    color[Eid] = "red"
+        //}
         this.highlightTextareaArray(dictToH, color)
+
     }
 
     createNewExclusion(labelid, exclusionDiv, pid, well){
@@ -648,10 +689,11 @@ class SubLabel{
     }
 
     exclusionVariableHandler(erase, labelid, Eid){
-            this.action = "exclusion"
-            this.exclusionInfo["erase"] = false
-            this.exclusionInfo["labelID"] = labelid
-            this.exclusionInfo["exclusionID"] = Eid
+        this.action = "exclusion"
+        this.exclusionInfo["erase"] = false
+        this.exclusionInfo["labelID"] = labelid
+        this.exclusionInfo["exclusionID"] = Eid
+        this.createExclusionHighlight(labelid, Eid)
     }
 
 
@@ -659,6 +701,14 @@ class SubLabel{
         return "exclusionDiv_"+lid+"_"+pid
     }
 
+    changeSelectorValue(lid, pid, newValue) {
+        var selector = document.getElementById(this.getSelectorID(lid, pid))
+        selector.value = newValue;
+    }
+
+    getSelectorID(lid, pid){
+        return "selector_"+lid+"-"+pid
+    }
 
 
 
@@ -914,6 +964,7 @@ class SubLabel{
         // Tolerance Type Selector
         var typeDiv = document.createElement("select")
         typeDiv.setAttribute("class", "custom-select")
+        typeDiv.setAttribute("id", this.getSelectorID(id, pid))
 
         // types
         for(let type in tolerance_possibilities){
@@ -922,6 +973,8 @@ class SubLabel{
             choice.innerText = tolerance_possibilities[type]
             typeDiv.append(choice)
         }
+        this.createToleranceTypeNewValue(id)
+        typeDiv.addEventListener("change", () => this.setToleranceTypeNewValue(id, typeDiv.value))
 
         generalDiv.append(nameDiv)
         generalDiv.append(typeDiv)
