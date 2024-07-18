@@ -111,7 +111,7 @@ class SublabelProblem(Problem):
                 elif not result_right[label][ans][1]:
                     over_tolerance += 1
                     output_statement_ans_stud += f"    - 🟧 too large\n"
-                    output_statement_ans_stud += f"    - \n"
+                    output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
                 else:
                     is_corr = False
                     for sel_stuf in result_right[label][ans][0]:
@@ -120,10 +120,10 @@ class SublabelProblem(Problem):
                     if is_corr:
                         correct += 1
                         output_statement_ans_stud += f"    - ✅️ succes \n"
-                        output_statement_ans_stud += f"    - \n"
+                        output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
                     else:
                         output_statement_ans_stud += f"    - 🟧 incomplete \n"
-                        output_statement_ans_stud += f"    - \n"
+                        output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
 
             score = max(0, (found - over_tolerance - miss) / len(answer[label]))
             total += score

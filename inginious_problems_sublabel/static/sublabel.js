@@ -39,6 +39,9 @@ function studio_init_template_sublabel(well, pid, problem)
             highlightValue[id] = answer[id]["values"]
         }
     }
+    else{
+        answerarea.val("{}")
+    }
 
     if("code" in problem){
         code = problem["code"]
@@ -47,7 +50,7 @@ function studio_init_template_sublabel(well, pid, problem)
 
     if("tolerance" in problem){
         if( problem["tolerance"] !== ""){
-            tolerance = JSON.parse(problem["tolerance"]) // Todo a remodifier plus tard
+            tolerance = JSON.parse(problem["tolerance"])
         }
     }
 
@@ -74,9 +77,9 @@ class SubLabel{
         this.textareasize   = textareasize
         this.side           = side;
         this.lineNumbers    = linenumbers
-        this.action         = "action"
+        this.action         = "stop"
         this.tolerance      = tolerance
-        this.exclusionInfo = {}
+        this.exclusionInfo  = {}
     }
 
     startTeacher() {
@@ -280,20 +283,18 @@ class SubLabel{
         this.highlightValue[id] = []
         this.highlightColor[id] = color
         this.tolerance[id] = {}
+        this.updateAnswerArea()
     }
 
-    eraseLabelTeacher(id, labelDiv){
+    eraseLabelTeacher(lid, labelDiv){
         let result = confirm("Press OK to erase the label");
         if(result){
-            delete this.labelNameID[id]
-            delete this.highlightColor[id]
-            delete this.highlightValue[id]
-            $("#label-text_" + id+"-"+this.pid, this.well).remove()
-            this.getCheckBox(id,this.pid,this.well).remove()
-            //$("#context-menu-item_" +id+"-"+this.pid).remove()
-            $("#erase-label_" + id+"-"+this.pid, this.well).remove()
-            $("#toolbar-coloring_"+id+"-"+this.pid).remove()
-            labelDiv.remove()
+            delete this.labelNameID[lid]
+            delete this.highlightColor[lid]
+            delete this.highlightValue[lid]
+            delete this.tolerance[lid]
+            $("#"+lid + "-" + this.pid, this.well).remove()
+            $("#toolbar-coloring_"+lid+"-"+this.pid).remove()
             this.updateValues()
         }
     }
@@ -333,7 +334,7 @@ class SubLabel{
         //this.set_contextName(id,name,pid, well);
     }
 
-    set_contextName(id,name, pid, well){ // TODO a changer danger PID pas bien écrit
+    set_contextName(id,name, pid, well){
         let li = document.getElementById("context-menu-item_" +id+"-"+pid);
         li.textContent = name;
     }
@@ -494,7 +495,7 @@ class SubLabel{
                 newLabels.push([getNewLabelsValuesInsideFunction(labelsRanges1[index1],labelsRanges2[foundIntersectingIndex], this)])
                 // if range1 is bigger we need to take into consideration the part left left.
                 if(range1[1] > range2[1]){
-                    let temp = this.getIntersectionTwoArrays([[range2[1], range1[1]]], [labelsRanges1[index1]], ranges2, labelsRanges2) // TODO On revisite toute les liste quand il y a pas besoin.
+                    let temp = this.getIntersectionTwoArrays([[range2[1], range1[1]]], [labelsRanges1[index1]], ranges2, labelsRanges2)
                     newRanges= newRanges.concat(temp[0]);
                     newLabels= newLabels.concat(temp[1]);
                 }
@@ -596,8 +597,10 @@ class SubLabel{
     checkToleranceExclusionExist(labelID,idExclusion,index){
         if(!(labelID in this.tolerance)){
             this.tolerance[labelID] = {"exclusion":{}, "type":"line"}}
+        if(!("exclusion" in this.tolerance[labelID])) {
+            this.tolerance[labelID]["exclusion"] = {}}
         if(!(idExclusion in this.tolerance[labelID]["exclusion"])){
-            this.tolerance[labelID]["exclusion"][idExclusion] = ["", [[]]]}  // TODO array d'array ? selection
+            this.tolerance[labelID]["exclusion"][idExclusion] = ["", [[]]]}
     }
     checkToleranceTypeExist(labelID){
         if(!(labelID in this.tolerance)){
@@ -875,7 +878,7 @@ class SubLabel{
 
         var cardDiv = document.createElement("div")
         cardDiv.setAttribute("class", "card mb-3")
-        cardDiv.setAttribute("id", labelid)
+        cardDiv.setAttribute("id", labelid + "-" + pid)
 
         // Header
         var cardHeaderDiv = document.createElement("div")
@@ -896,7 +899,11 @@ class SubLabel{
         colHeaderSpanName.setAttribute("aria-controls", "collapse_"+labelid)
         colHeaderSpanName.setAttribute("class", "")
         colHeaderSpanName.setAttribute("aria-expanded", "true")
-        colHeaderSpanName.textContent = "Label name : "
+
+        var colHeaderIconBar = document.createElement("i")
+        colHeaderIconBar.setAttribute("class", "fa fa-bars")
+        colHeaderDivName.append(colHeaderIconBar)
+        colHeaderSpanName.textContent = " Label name : "
 
         var colHeaderSpanNameSecond = document.createElement("span")
         colHeaderSpanNameSecond.textContent = labelName
