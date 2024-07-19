@@ -125,7 +125,10 @@ class SublabelProblem(Problem):
                         output_statement_ans_stud += f"    - 🟧 incomplete \n"
                         output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
 
-            score = max(0, (found - over_tolerance - miss) / len(answer[label]))
+            if len(answer[label]) == 0:
+                score = 1
+            else:
+                score = max(0, int((found - over_tolerance - miss) / len(answer[label])))
             total += score
             # text format under :
             output_statement += (
@@ -386,9 +389,11 @@ def check_tolerance(interval_clean, tolerance_intervals):
 
 def check_exclusion(interval_clean, exclusion_intervals):
     result = ""
+    i = 1
     for excl in exclusion_intervals:
         if at_least_one_intersection(interval_clean, exclusion_intervals[excl][1]):
-            result += exclusion_intervals[excl][0]
+            result += str(i) + ") (" + exclusion_intervals[excl][0] + ")    "
+            i += 1
     return result
 
 

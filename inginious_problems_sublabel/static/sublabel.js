@@ -276,14 +276,19 @@ class SubLabel{
     createLabelTeacher(pid, well){
         let color = colors[lengthDict(this.highlightValue)]
         var id = this.generateLabelID();
-        let name = $("#new_label_name").val()
-        this.createToleranceDiv(id, name, color, pid, well)
-        //this.createLabelContext(id, pid, well)
-        this.labelNameID[id] = name
-        this.highlightValue[id] = []
-        this.highlightColor[id] = color
-        this.tolerance[id] = {}
-        this.updateAnswerArea()
+        let name_area = $("#new_label_name-"+pid, well)
+        let name = name_area.val()
+        if(name === ""){ animation_input_error(name_area)}
+        else{
+            $("#new_label_name-"+pid, well).val("")
+            this.createToleranceDiv(id, name, color, pid, well)
+            //this.createLabelContext(id, pid, well)
+            this.labelNameID[id] = name
+            this.highlightValue[id] = []
+            this.highlightColor[id] = color
+            this.tolerance[id] = {}
+            this.updateAnswerArea()
+        }
     }
 
     eraseLabelTeacher(lid, labelDiv){
@@ -666,7 +671,8 @@ class SubLabel{
     createExclusionHighlight(labelID, exclusionID){
         let dictToH = {}
         let color = {}
-        dictToH[exclusionID] = this.tolerance[labelID]["exclusion"][exclusionID][1]
+
+        dictToH[exclusionID] = this.getToleranceExclusionValue(labelID, exclusionID, 1)
         color[exclusionID] = "red"
         //for(let Eid in this.tolerance[labelID]["exclusion"]){
         //    dictToH[Eid] = this.tolerance[labelID]["exclusion"][Eid][1]
@@ -1120,5 +1126,14 @@ function lengthDict(dictionary){
 
 function generateRandomID(){
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
-    }
+}
+
+function animation_input_error(input_element){
+    input_element.css('background-color', '#ff4c4c')
+    input_element.addClass('input_error')
+    setTimeout(function () {
+        input_element.removeClass('input_error')
+        input_element.css('background-color', '')
+    }, 300)
+}
 
