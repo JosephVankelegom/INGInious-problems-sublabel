@@ -1,7 +1,6 @@
 
 let colors = ['yellow', 'blue', 'red', 'green']
 let tolerance_possibilities = ['line', '5 characters', '3 characters', '1 character', 'none']
-const eventReload = new CustomEvent("reloadAll");
 
 function load_input_sublabel(submissionid, key, input) {
     var field = $("form#task input[name='" + key + "']");
@@ -30,8 +29,7 @@ function studio_init_template_sublabel(well, pid, problem)
 
     if("answer" in problem && problem["answer"] !== ""){
 
-        answerarea.val(problem["answer"]);
-        let answer = JSON.parse(problem["answer"])
+        let answer = problem["answer"]
         for(let id in answer){
             if(id === "0"){break;}
             labelNameID[id] = answer[id]["label"];
@@ -50,7 +48,7 @@ function studio_init_template_sublabel(well, pid, problem)
 
     if("tolerance" in problem){
         if( problem["tolerance"] !== ""){
-            tolerance = JSON.parse(problem["tolerance"])
+            tolerance = problem["tolerance"]
         }
     }
 
@@ -100,6 +98,7 @@ class SubLabel{
              }
          }
          this.updateToleranceFieldInput()
+        this.updateAnswerArea()
 
 
         var that = this;
@@ -195,14 +194,14 @@ class SubLabel{
             this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
         }
 
-
+        this.updateAnswerArea()
         this.createHighlightTextarea(this.highlightValue)
         //this.createEraseContext(this.pid, this.well)
 
         this.answerarea.on('change', () => {
             let answer = this.answerarea.val();
             if(answer === ""){return}
-            answer = JSON.parse(answer);
+            answer = JSON.parse(answer)
             this.labelNameID = {};
             this.highlightValue = {};
             this.highlightColor = {};
@@ -303,6 +302,13 @@ class SubLabel{
             this.updateValues()
         }
     }
+
+    garbageExclusion(lid, eid, outerdiv){
+        this.eraseToleranceExclusion(lid, eid)
+        outerdiv.remove()
+    }
+
+
     eraseLabelStudent(id, labelDiv){
         let result = confirm("Press OK to erase the label");
         if(result){
@@ -599,7 +605,7 @@ class SubLabel{
     }
 
 
-    checkToleranceExclusionExist(labelID,idExclusion,index){
+    checkToleranceExclusionExist(labelID,idExclusion){
         if(!(labelID in this.tolerance)){
             this.tolerance[labelID] = {"exclusion":{}, "type":"line"}}
         if(!("exclusion" in this.tolerance[labelID])) {
@@ -612,12 +618,18 @@ class SubLabel{
             this.tolerance[labelID] = {"exclusion":{}, "type":"line"}}
     }
     setToleranceExclusionNewValue(labelID,idExclusion,index, value){
-        this.checkToleranceExclusionExist(labelID, idExclusion, index)
+        this.checkToleranceExclusionExist(labelID, idExclusion)
         this.tolerance[labelID]["exclusion"][idExclusion][index] = value
         this.updateToleranceFieldInput()
     }
+
+    eraseToleranceExclusion(labelID, idExclusion){
+        this.checkToleranceExclusionExist(labelID, idExclusion)
+        delete this.tolerance[labelID]["exclusion"][idExclusion]
+        this.updateToleranceFieldInput()
+    }
     getToleranceExclusionValue(labelID,idExclusion,index){
-        this.checkToleranceExclusionExist(labelID, idExclusion, index)
+        this.checkToleranceExclusionExist(labelID, idExclusion)
         return this.tolerance[labelID]["exclusion"][idExclusion][index]
     }
 
@@ -699,7 +711,7 @@ class SubLabel{
 
     exclusionVariableHandler(erase, labelid, Eid){
         this.action = "exclusion"
-        this.exclusionInfo["erase"] = false
+        this.exclusionInfo["erase"] = erase
         this.exclusionInfo["labelID"] = labelid
         this.exclusionInfo["exclusionID"] = Eid
         this.createExclusionHighlight(labelid, Eid)
@@ -1023,23 +1035,37 @@ class SubLabel{
         exclusionEditA.style.color = "red"
         exclusionEditA.onclick = this.exclusionVariableHandler.bind(this,false, labelid, Eid)
 
+        // eraser button
+        var exclusionEraseLI = document.createElement("li")
+        exclusionEraseLI.setAttribute("class", "list-inline-item g-mr-20")
+        var exclusionEraseA = document.createElement("A")
+        exclusionEraseA.setAttribute("class", "u-link-v5  g-color-primary--hover")
+        var exclusionEraseIcon = document.createElement("i")
+        exclusionEraseIcon.setAttribute("class", "fa fa-eraser")
+        exclusionEraseA.onclick = this.exclusionVariableHandler.bind(this,true, labelid, Eid)
 
 
+        // Garbage
         var exclusionGarbageLI = document.createElement("li")
         exclusionGarbageLI.setAttribute("class", "list-inline-item ml-auto")
         var exclusionGarbageA = document.createElement("A")
         exclusionGarbageA.setAttribute("class", "u-link-v5 g-color-gray-dark-v4 g-color-primary--hover")
         var exclusionGarbageIcon = document.createElement("i")
         exclusionGarbageIcon.setAttribute("class", "fa fa-lg fa-trash-o")
+        exclusionGarbageA.onclick = this.garbageExclusion.bind(this, labelid, Eid, generaldiv)
 
 
         mediaBody.append(exclusionIconsUL)
 
         exclusionIconsUL.append(exclusionEditLI)
+        exclusionIconsUL.append(exclusionEraseLI)
         exclusionIconsUL.append(exclusionGarbageLI)
 
         exclusionEditLI.append(exclusionEditA)
         exclusionEditA.append(exclusionEditIcon)
+
+        exclusionEraseLI.append(exclusionEraseA)
+        exclusionEraseA.append(exclusionEraseIcon)
 
         exclusionGarbageLI.append(exclusionGarbageA)
         exclusionGarbageA.append(exclusionGarbageIcon)

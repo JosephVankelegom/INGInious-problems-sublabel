@@ -19,9 +19,9 @@ class SublabelProblem(Problem):
     def __init__(self, problemid, content, translations, taskfs):
         Problem.__init__(self, problemid, content, translations, taskfs)
         self._header = content['header'] if "header" in content else ""
-        self._answer = self.parse_answer(content.get("answer", ""))
+        self._answer = content['answer'] if "answer" in content else {}
         self._code = content['code'] if "code" in content else ""
-        self._tolerance = content['tolerance'] if "tolerance" in content else ""
+        self._tolerance = content['tolerance'] if "tolerance" in content else {}
 
     @classmethod
     def get_type(cls):
@@ -162,6 +162,10 @@ class SublabelProblem(Problem):
 
     @classmethod
     def parse_problem(cls, problem_content):
+        if "answer" in problem_content:
+            problem_content["answer"] = json.loads(problem_content["answer"])
+        if "tolerance" in problem_content:
+            problem_content["tolerance"] = json.loads(problem_content["tolerance"])
         return problem_content
 
     @classmethod
@@ -171,9 +175,7 @@ class SublabelProblem(Problem):
         return fields
 
     def get_tolerance(cls):
-        if cls._tolerance == "":
-            return {}
-        raw = json.loads(cls._tolerance)
+        raw = cls._tolerance
         tolerance = {}
         for lid in raw:
             match raw[lid]["type"]:
@@ -196,9 +198,9 @@ class SublabelProblem(Problem):
         exclusion = {}
         for lab in all_labels:
             exclusion[lab] = {}
-        if cls._tolerance == "":
+        if len(cls._tolerance) == 0:
             return exclusion
-        raw = json.loads(cls._tolerance)
+        raw = cls._tolerance
         for lid in raw:
             exclusion[lid] = raw[lid]["exclusion"]
         return exclusion
@@ -300,6 +302,7 @@ def identify_lines(code):
 def fix_tolerance(answer, tolerance, lid):
     result = []
     for ans in answer[lid]['values']:
+        if len(ans) < 2: continue
         result.append([ans[0] - tolerance, ans[1] + tolerance])
     return result
 
@@ -368,7 +371,9 @@ def verify_correspondence_strict(interval, interval_clean, list_of_intervals, co
 
 def at_least_one_intersection(array1, array2):
     for interval1 in array1:
+        if len(interval1) < 2 : continue
         for interval2 in array2:
+            if len(interval2) < 2 : continue
             if intersect(interval1, interval2):
                 return True
     return False
@@ -412,7 +417,7 @@ class DisplayableSublabelProblem(SublabelProblem, DisplayableProblem):
         header = ParsableText(self.gettext(language, self._header), "rst",
                               translation=self.get_translation_obj(language))
         code = self._code
-        tolerance = self._tolerance
+        tolerance = json.dumps(self._tolerance)
         data = json.dumps(self._answer)
         return template_helper.render("sublabel.html", template_folder=PATH_TO_TEMPLATES, inputId=self.get_id(),
                                       header=header, code=code, tolerance=tolerance, data=data)

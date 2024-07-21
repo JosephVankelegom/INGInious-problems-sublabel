@@ -8,9 +8,7 @@
 
 </style>
 
-<script type="text/javascript">
-    var dataExercise = {{ data|safe }}
-</script>
+
 
 {{ header | safe }}
 
@@ -78,6 +76,7 @@
 <script>
     $(document).ready()
     {
+        var dataExercise = {{ data|safe }}
 
         let textarea = $("#code-{{inputId}}")
         let answerarea = $("#answer-{{inputId}}")
@@ -90,13 +89,10 @@
         for (const [id, value] of Object.entries(dataExercise)) {
             labelNameID[id] = value["label"];
             highlightColor[id] = value["color"];
-
         }
 
-        let exercise = new SubLabel(code, textarea, answerarea, highlightValue, labelNameID, highlightColor, "{{ inputId }}", null, 0, "student", lineNumbers);
-        //contextMenuStart(textarea, "{{ inputId }}", null)
+        let exercise = new SubLabel(code, textarea, answerarea, highlightValue, labelNameID, highlightColor, "{{ inputId }}", null, 0, "student", lineNumbers, {});
         exercise.startStudent();
-        answerarea.trigger('change')
         textarea.trigger('change')
     }
 </script>
