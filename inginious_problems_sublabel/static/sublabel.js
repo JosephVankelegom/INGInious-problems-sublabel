@@ -1159,7 +1159,7 @@ class SubLabel{
         button.setAttribute("id", getRangeButtonID(eid));
         button.setAttribute("class", "btn btn-primary");
         button.setAttribute("type", "button")
-        button.textContent = "Penality";
+        button.textContent = "Penalty";
         button.onclick = this.transformButton.bind(this, lid, eid, rangeInput, button)
 
         // Append the range input and button to the range container div

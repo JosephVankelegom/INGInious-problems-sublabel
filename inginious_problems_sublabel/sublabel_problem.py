@@ -91,6 +91,7 @@ class SublabelProblem(Problem):
             over_tolerance = 0
             miss = 0
             correct = 0
+            penalty = 0
             for sel in selection_found[label]:
                 match selection_found[label][sel]:
                     case 1:
@@ -107,28 +108,34 @@ class SublabelProblem(Problem):
                 if len(result_right[label][ans][0]) == 0:
                     miss += 1
                     output_statement_ans_stud += f"    - 🚫 incorrect\n"
-                    output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
+                    output_statement_ans_stud += f"    - {result_right[label][ans][2]['Comment']}\n"
                 elif not result_right[label][ans][1]:
                     over_tolerance += 1
-                    output_statement_ans_stud += f"    - 🟧 too large\n"
-                    output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
+                    output_statement_ans_stud += f"    - 🟧 too broad\n"
+                    output_statement_ans_stud += f"    - {result_right[label][ans][2]['Comment']}\n"
                 else:
                     is_corr = False
                     for sel_stuf in result_right[label][ans][0]:
                         if result_right[label][ans][0][sel_stuf]:
                             is_corr = True
                     if is_corr:
-                        correct += 1
-                        output_statement_ans_stud += f"    - ✅️ succes \n"
-                        output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
+                        range_val = min(1, result_right[label][ans][2]['Penalty'])
+                        if range_val == 0:        # check if any penalty
+                            correct += 1
+                            output_statement_ans_stud += f"    - ✅️ succes \n"
+                            output_statement_ans_stud += f"    - {result_right[label][ans][2]['Comment']}\n"
+                        else:
+                            penalty += range_val
+                            output_statement_ans_stud += f"    - 🟧 almost \n"
+                            output_statement_ans_stud += f"    - {result_right[label][ans][2]['Comment']}\n"
                     else:
                         output_statement_ans_stud += f"    - 🟧 incomplete \n"
-                        output_statement_ans_stud += f"    - {result_right[label][ans][2]}\n"
+                        output_statement_ans_stud += f"    - {result_right[label][ans][2]['Comment']}\n"
 
             if len(answer[label]) == 0:
                 score = 1
             else:
-                score = max(0, int((found - over_tolerance - miss) / len(answer[label])))
+                score = round(max(0.0, (found - over_tolerance - miss - penalty) / len(answer[label])), 4)
             total += score
             # text format under :
             output_statement += (
@@ -393,11 +400,12 @@ def check_tolerance(interval_clean, tolerance_intervals):
 
 
 def check_exclusion(interval_clean, exclusion_intervals):
-    result = ""
+    result = {"Comment": "", "Penalty": 0}
     i = 1
     for excl in exclusion_intervals:
         if at_least_one_intersection(interval_clean, exclusion_intervals[excl][1]):
-            result += str(i) + ") (" + exclusion_intervals[excl][0] + ")    "
+            result["Comment"] += str(i) + ") (" + exclusion_intervals[excl][0] + ")    "
+            result["Penalty"] += exclusion_intervals[excl][2]
             i += 1
     return result
 
