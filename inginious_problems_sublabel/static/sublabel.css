@@ -134,3 +134,14 @@
     0%      {left: -5px}
     100%    {right: -5px}
 }
+
+/* Range css */
+.range-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.5s ease;
+}
+.range-container .btn {
+    transition: all 0.5s ease;
+}

@@ -95,6 +95,13 @@ class SubLabel{
          for(let lid in this.tolerance){
              for(let eid in this.tolerance[lid]["exclusion"]){
                  this.createExclusionFields(eid, lid, null, this.getToleranceExclusionValue(lid, eid, 0),  this.pid, this.well)
+                 if(this.getToleranceExclusionValue(lid, eid, 2) > 0){
+                     var rangeSelector = document.getElementById(getRangeId(eid))
+                     var button = document.getElementById(getRangeButtonID(eid))
+
+                     rangeSelector.value = this.getToleranceExclusionValue(lid, eid, 2)/0.25
+                     this.transformButton(lid, eid, rangeSelector, button)
+                 }
              }
          }
          this.updateToleranceFieldInput()
@@ -611,7 +618,7 @@ class SubLabel{
         if(!("exclusion" in this.tolerance[labelID])) {
             this.tolerance[labelID]["exclusion"] = {}}
         if(!(idExclusion in this.tolerance[labelID]["exclusion"])){
-            this.tolerance[labelID]["exclusion"][idExclusion] = ["", [[]]]}
+            this.tolerance[labelID]["exclusion"][idExclusion] = ["", [[]], 0]}
     }
     checkToleranceTypeExist(labelID){
         if(!(labelID in this.tolerance)){
@@ -733,6 +740,24 @@ class SubLabel{
 
 
 
+
+    transformButton(lid, eid, rangeSelector, button) {
+        rangeSelector.classList.remove('d-none');  // Show the range selector
+        button.textContent = 'X';  // Change button text to 'X'
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-danger', 'ml-auto');  // Optionally change button style to indicate 'close' and move it to the end
+        rangeSelector.dispatchEvent(new Event('change'))
+
+        button.onclick = () => {
+            rangeSelector.classList.add('d-none');  // Hide the range selector
+            button.textContent = 'Penalty';
+            button.classList.remove('btn-danger', 'ml-auto');
+            button.classList.add('btn-primary');  // Revert button style and position
+
+            button.onclick = this.transformButton.bind(this, lid, eid, rangeSelector, button);  // Re-assign the transform function
+            this.setToleranceExclusionNewValue(lid, eid, 2, 0)
+        };
+    }
 
 
     /////////////////////////////////////
@@ -1015,11 +1040,14 @@ class SubLabel{
         var generaldiv = document.createElement("div")
         generaldiv.setAttribute("class", "col-md-8")
         var mediaDiv = document.createElement("div")
-        mediaDiv.setAttribute("class", "media g-mb-30 media-comment")
+        //mediaDiv.setAttribute("class", "media g-mb-30 media-comment")
 
         // Body
+        var mediaBodyRow = document.createElement("div")
+        mediaBodyRow.setAttribute("class", "row")
+
         var mediaBody = document.createElement("div")
-        mediaBody.setAttribute("class", "media-body u-shadow-v18 g-bg-secondary g-pa-30")
+        mediaBody.setAttribute("class", "col d-flex flex-column")
 
         var exclusionIconsUL = document.createElement("ul")
         exclusionIconsUL.setAttribute("class", "list-inline d-sm-flex my-0")
@@ -1054,7 +1082,14 @@ class SubLabel{
         exclusionGarbageIcon.setAttribute("class", "fa fa-lg fa-trash-o")
         exclusionGarbageA.onclick = this.garbageExclusion.bind(this, labelid, Eid, generaldiv)
 
+        // range
 
+        var rangeColDiv = document.createElement("div")
+        rangeColDiv.setAttribute("class", "col d-flex flex-column")
+        this.createRangeSelector(labelid, Eid, rangeColDiv)
+
+        mediaBodyRow.append(mediaBody)
+        mediaBodyRow.append(rangeColDiv)
         mediaBody.append(exclusionIconsUL)
 
         exclusionIconsUL.append(exclusionEditLI)
@@ -1079,12 +1114,64 @@ class SubLabel{
         exclusionTextArea.value = comment
 
         mediaBody.append(exclusionTextAreaDiv)
+
+
         exclusionTextAreaDiv.append(exclusionTextArea)
         // general
         outerDiv.append(generaldiv)
         generaldiv.append(mediaDiv)
-        mediaDiv.append(mediaBody)
+        mediaDiv.append(mediaBodyRow)
 
+    }
+
+    createRangeSelector(lid, eid, outerDiv){
+        // Create the main container div
+        const containerDiv = document.createElement("div");
+        containerDiv.setAttribute("class", "container mt-5");
+
+        // Create the row div
+        const rowDiv = document.createElement("div");
+        rowDiv.setAttribute("class", "row");
+
+        // Create the column div
+        const colDiv = document.createElement("div");
+        colDiv.setAttribute("class", "col text-center");
+
+        // Create the range container div
+        const rangeContainerDiv = document.createElement("div");
+        rangeContainerDiv.setAttribute("class", "range-container");
+
+        // Create the range input
+        const rangeInput = document.createElement("input");
+        rangeInput.setAttribute("type", "range");
+        rangeInput.setAttribute("min", "0");
+        rangeInput.setAttribute("max", "4");
+        rangeInput.setAttribute("id", getRangeId(eid));
+        rangeInput.setAttribute("class", "form-control-range d-none");
+
+        rangeInput.onchange = (event) => {
+            const rangeValue = event.target.value
+            this.setToleranceExclusionNewValue(lid, eid, 2, rangeValue*0.25)
+        }
+
+        // Create the button
+        const button = document.createElement("button");
+        button.setAttribute("id", getRangeButtonID(eid));
+        button.setAttribute("class", "btn btn-primary");
+        button.setAttribute("type", "button")
+        button.textContent = "Penality";
+        button.onclick = this.transformButton.bind(this, lid, eid, rangeInput, button)
+
+        // Append the range input and button to the range container div
+        rangeContainerDiv.appendChild(rangeInput);
+        rangeContainerDiv.appendChild(button);
+
+        colDiv.appendChild(rangeContainerDiv);
+        rowDiv.appendChild(colDiv);
+        containerDiv.appendChild(rowDiv);
+
+        // Append the main container div to the body or another container
+        outerDiv.appendChild(containerDiv);
     }
 
     generateLabelID() {
@@ -1163,3 +1250,10 @@ function animation_input_error(input_element){
     }, 300)
 }
 
+function getRangeId(eid){
+    return "range_id_"+eid
+}
+
+function getRangeButtonID(eid){
+    return "range_button_"+eid
+}
