@@ -122,7 +122,7 @@ class SublabelProblem(Problem):
                         range_val = min(1, result_right[label][ans][2]['Penalty'])
                         if range_val == 0:        # check if any penalty
                             correct += 1
-                            output_statement_ans_stud += f"    - ✅️ succes \n"
+                            output_statement_ans_stud += f"    - ✅️ success \n"
                             output_statement_ans_stud += f"    - {result_right[label][ans][2]['Comment']}\n"
                         else:
                             penalty += range_val
@@ -148,13 +148,11 @@ class SublabelProblem(Problem):
         total = total / len(answer)
         output_statement = (
                                f"The correction is by selection (a selection is each zone selected divided by backslash).\n\n"
-                               f"- correct : is the number of correct selection you have done \n\n"
-                               f"- incomplete: is the number of selection you have done that are almost correct, "
-                               f"but are missing essential elements\n\n"
-                               f"- over tolerance : are the selection you did that are too big, but have a correct selection in them"
-                               f"they only impact negatively you mark\n\n"
-                               f"- miss: is the number of selection you have done that don't intersect with any correct selection\n\n"
-                               f"- not found: is the number of selection done by the teacher you still need to find.\n\n\n"
+                               f"- ✅️ success : you found the selection! \n\n"
+                               f"- 🟧 incomplete: you found part of the selection \n\n"
+                               f"- 🟧 too board : the selection si too big, you encompase the solution and more\n\n"
+                               f"- 🚫 incorrect: didn't find anything\n\n"
+                               f"- 🟧 almost: This selection is a miss or too board, there will be a comment to give you more inforamtion.\n\n\n"
                                f".. list-table:: **{self.get_name()}** \r"
                                f"  :widths: 20 10 20\n"
                                f"  :header-rows: 1\n\n"
@@ -307,6 +305,8 @@ def identify_lines(code):
             result.append([0, all_indexes_occu[index]])
         else:
             result.append([all_indexes_occu[index - 1], all_indexes_occu[index]])
+    if all_indexes_occu[-1] < len(code):
+        result.append([all_indexes_occu[-1], len(code)])
     return result
 
 
