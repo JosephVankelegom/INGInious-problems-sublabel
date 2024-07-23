@@ -185,7 +185,11 @@ class SublabelProblem(Problem):
         raw = cls._tolerance
         tolerance = {}
         for lid in raw:
-            match raw[lid]["type"]:
+            if "type" in raw[lid]:
+                tol_Type = raw[lid]["type"]
+            else :
+                tol_Type = "line"
+            match tol_Type:
                 case "line":
                     tolerance[lid] = identify_lines(cls._code)
                 case "5 characters":

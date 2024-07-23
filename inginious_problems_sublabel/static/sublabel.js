@@ -292,7 +292,7 @@ class SubLabel{
             this.labelNameID[id] = name
             this.highlightValue[id] = []
             this.highlightColor[id] = color
-            this.tolerance[id] = {}
+            this.checkToleranceTypeExist(id)
             this.updateAnswerArea()
         }
     }
