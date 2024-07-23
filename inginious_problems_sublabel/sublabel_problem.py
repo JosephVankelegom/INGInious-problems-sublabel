@@ -211,7 +211,10 @@ class SublabelProblem(Problem):
             return exclusion
         raw = cls._tolerance
         for lid in raw:
-            exclusion[lid] = raw[lid]["exclusion"]
+            if "exclusion" in raw[lid]:
+                exclusion[lid] = raw[lid]["exclusion"]
+            else:
+                continue
         return exclusion
 
     def parse_answer(self, answer_raw):
