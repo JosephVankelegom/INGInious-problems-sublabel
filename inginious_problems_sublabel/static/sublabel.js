@@ -1,5 +1,49 @@
 
 let colors = ['yellow', 'blue', 'red', 'green']
+const colorMap = {
+  0: 'palegoldenrod',
+  1: 'lightsalmon',
+  2: 'palegreen',
+  3: 'lightblue',
+  4: 'lightcoral',
+  5: 'lemonchiffon',
+  6: 'lightyellow',
+  7: 'lightcyan',
+  8: 'lightpink',
+  9: 'palevioletred',
+  10: 'palegoldenrod',
+  11: 'paleturquoise',
+  12: 'lightseagreen',
+  13: 'honeydew',
+  14: 'mintcream',
+  15: 'lightgray',
+  16: 'lightsteelblue',
+  17: 'lavender',
+  18: 'palegreen'
+};
+
+const colorMapLight = {
+  0: '#FF66FF', // Light Lavender
+  1: '#FFFF66', // Light Gold
+  2: '#66CCFF', // Light Azure
+  3: '#FFCC99', // Light Orange
+  4: '#99CCFF', // Light Sky Blue
+  5: '#FF66CC', // Light Fuchsia
+  6: '#CCFF99', // Light Lime
+  7: '#99FFFF', // Light Cyan
+  8: '#FF99FF', // Light Magenta
+  9: '#99FF99', // Light Green
+  10: '#99FF66', // Light Lime Green
+  11: '#FF6666', // Light Coral
+  12: '#66FF99', // Light Spring Green
+  13: '#FFCC66', // Light Orange Yellow
+  14: '#6666FF', // Light Indigo
+  15: '#FF99CC', // Light Pink
+  16: '#99FFCC', // Light Mint Green
+  17: '#FF9999', // Light Red
+  18: '#CC99FF', // Light Purple
+  19: '#99FF99'  // Light Green
+};
 let tolerance_possibilities = ['line', '5 characters', '3 characters', '1 character', 'none']
 
 function load_input_sublabel(submissionid, key, input) {
@@ -196,7 +240,7 @@ class SubLabel{
         var lineNumbers = this.lineNumbers;
 
         for(let id in this.labelNameID){
-            this.createLabelText(id, this.highlightColor[id], true, this.pid, this.well)
+            this.createLabelText(id, true, this.pid, this.well)
             //this.createLabelContext(id, this.pid, this.well)
             this.set_labelNameID(id, this.labelNameID[id], this.pid, this.well)
         }
@@ -262,9 +306,9 @@ class SubLabel{
 
         // check the display box is checked
         let highlightValueChecked = {};
-        for(const [id, value]  of Object.entries(highlightArray)){
-            if(this.isBoxChecked(id, this.pid, this.well)){
-                highlightValueChecked[id] = value
+        for(const [lid, value]  of Object.entries(highlightArray)){
+            if(this.isBoxChecked(lid, this.pid, this.well)){
+                highlightValueChecked[this.getColorName(lid)] = value
             }
         }
 
@@ -273,15 +317,16 @@ class SubLabel{
         if(dataIntersections.length === 0){return this.textarea.highlightWithinTextarea({highlight:[]})}
         let highListFormated = [];
         for(let label in dataIntersections){
-            highListFormated.push({highlight: dataIntersections[label], className: this.highlightColor[label]})
+            let class_name_info = this.getHighlightColorIntersectionClassName(label, this.pid)
+            highListFormated.push({highlight: dataIntersections[label], className: class_name_info})
         }
         this.textarea.highlightWithinTextarea({highlight : highListFormated})
         this.textarea.trigger('input')                                                  // TODO verifier que c'est pas de la merde ca, (genre que je trigger pas creteH en input et puis que je retrigger pq je trigger input ici)
     }
 
     createLabelTeacher(pid, well){
-        let color = colors[lengthDict(this.highlightValue)]
         var id = this.generateLabelID();
+        let color = this.getColorkey(id)
         let name_area = $("#new_label_name-"+pid, well)
         let name = name_area.val()
         if(name === ""){ animation_input_error(name_area)}
@@ -480,13 +525,10 @@ class SubLabel{
 
     getIntersectionTwoArrays(ranges1,labelsRanges1,ranges2,labelsRanges2){
         function getNewLabelsValuesInsideFunction(label1,label2, that){
-            if(label1[0] === "time"){return [`${label2}`]}
+
+            if(label1[0] === "time"){return label2}
             else{
-                let newLabel = label1.concat(label2).toString()
-                if(!(newLabel in that.highlightColor)){
-                    that.highlightColor[newLabel] = that.highlightColor[label1].concat(`-${that.highlightColor[label2]}`)
-                }
-                return newLabel
+                return insertSorted(label1, label2)
             }
         }
         let newRanges = [];
@@ -507,7 +549,7 @@ class SubLabel{
                 let range2 = ranges2[foundIntersectingIndex];
                 if(range1[0]<range2[0]){
                     newRanges.push([range1[0],range2[0]])
-                    newLabels.push([`${labelsRanges1[index1]}`])
+                    newLabels.push(labelsRanges1[index1])
                 }
                 newRanges.push([Math.max(range1[0],range2[0]), Math.min(range1[1],range2[1])])
                 newLabels.push([getNewLabelsValuesInsideFunction(labelsRanges1[index1],labelsRanges2[foundIntersectingIndex], this)])
@@ -519,11 +561,12 @@ class SubLabel{
                 }
             } else {
                 newRanges.push(range1);
-                newLabels.push([`${labelsRanges1[index1]}`])
+                newLabels.push(labelsRanges1[index1])
             }
         }
         return [newRanges,newLabels];
     }
+
     isIntersecting(range1, range2){
         return (range1[0] < range2[1] && range1[1] > range2[0]);
     }
@@ -594,6 +637,14 @@ class SubLabel{
         //this.updateValues();
         return indent;
     }
+
+
+
+    //////////////////////////////////////////////////////
+    //                                                  //
+    //          Exclusion Function Related              //
+    //                                                  //
+    //////////////////////////////////////////////////////
 
     GetExclusionId(pid, labelID, RandomNumberExclusion){
         return pid+"_"+labelID+"_"+RandomNumberExclusion
@@ -706,6 +757,35 @@ class SubLabel{
         this.createExclusionFields(Eid, labelid, exclusionDiv, "", pid, well)
     }
 
+    exclusionVariableHandler(erase, labelid, Eid){
+        this.action = "exclusion"
+        this.exclusionInfo["erase"] = erase
+        this.exclusionInfo["labelID"] = labelid
+        this.exclusionInfo["exclusionID"] = Eid
+        this.createExclusionHighlight(labelid, Eid)
+    }
+
+
+    /**
+     *
+     * Generate Class in the css style for intersection between two colors
+     * @param colorKeys  : string of ids
+     * @param pid   : string , it's the problem id.
+     * @param index : int, is the number of the new intersection
+     * @return {*}
+     */
+    getHighlightColorIntersectionClassName(colorKeys, pid){
+        const colorKeys_parsed = JSON.parse("["+colorKeys+"]")
+        const className = getColorClassName(colorKeys, pid)
+        if(colorKeys_parsed.length > 1){
+            generateGradientClasses(colorKeys_parsed, pid)
+            return className
+        }
+        else{
+            generateColorClass(colorKeys_parsed, pid)
+            return className
+        }
+    }
 
     highlightTextareaArray(dict, colors){
         let highListFormated = [];
@@ -716,13 +796,6 @@ class SubLabel{
         this.textarea.highlightWithinTextarea({highlight : highListFormated})
     }
 
-    exclusionVariableHandler(erase, labelid, Eid){
-        this.action = "exclusion"
-        this.exclusionInfo["erase"] = erase
-        this.exclusionInfo["labelID"] = labelid
-        this.exclusionInfo["exclusionID"] = Eid
-        this.createExclusionHighlight(labelid, Eid)
-    }
 
 
     getExclusionDiv(lid, pid){
@@ -759,7 +832,21 @@ class SubLabel{
         };
     }
 
-
+    getColorkey(lid){
+        if(lid in this.highlightColor){
+            return this.highlightColor[lid]
+        }
+        else {
+            let i = 0
+            while(Object.values(this.highlightColor).includes(i)){
+                i += 1
+            }
+            return i;
+        }
+    }
+    getColorName(lid){
+        return JSON.stringify(this.getColorkey(lid))
+    }
     /////////////////////////////////////
     /////////////////////////////////////
     // Generate HTML From JS
@@ -801,7 +888,9 @@ class SubLabel{
      * @param pid
      * @param well
      */
-    createLabelText(id, color, isReadonly, pid, well){
+    createLabelText(id, isReadonly, pid, well){
+
+        const colorKey = this.getColorkey(id)
 
         let labelDiv = $('#label-div-'+pid, well)
 
@@ -812,7 +901,7 @@ class SubLabel{
         labelNameArea.setAttribute("type", "text")
         labelNameArea.setAttribute("id", "label-text_"+id+"-"+pid)
         labelNameArea.setAttribute("placeholder", "Label name")
-        labelNameArea.setAttribute("style", "background-color: var(--"+color+");")
+        labelNameArea.setAttribute("style", "background-color: "+getColorCode(colorKey)+";")
         labelNameArea.setAttribute("class", "form-control")
         if(isReadonly){labelNameArea.setAttribute("readonly", "true")}
         else{labelNameArea.oninput = ()=> {this.updateLabel(id, labelNameArea)}}
@@ -823,7 +912,7 @@ class SubLabel{
 
         labelDiv.append(inputGroupDiv)
 
-        this.createColoringButton(id, $("#div-toolbar-"+pid), pid, color)
+        this.createColoringButton(id, $("#div-toolbar-"+pid), pid, colorKey)
         // create coloring logo button
 
     }
@@ -836,25 +925,21 @@ class SubLabel{
      * @param pid
      * @param well
      */
-    createCheckBox(id, labelDiv, pid, well){
-
-        var inputPrependDiv = document.createElement("div")
-        inputPrependDiv.setAttribute("class", "input-group-prepend")
-
-        var inputTextDiv = document.createElement("div")
-        inputTextDiv.setAttribute("class", "input-group-text")
-
-        var checkBox = document.createElement("input")
-        checkBox.setAttribute("type", "checkbox")
-        checkBox.setAttribute("id", "checkbox_" + id +"-"+pid);
+    createCheckBox(id, labelDiv, pid, well) {
+        // Create the checkbox element
+        var checkBox = document.createElement("input");
+        checkBox.setAttribute("type", "checkbox");
+        checkBox.setAttribute("id", "checkbox_" + id + "-" + pid);
         checkBox.setAttribute("checked", "checked");
         checkBox.setAttribute("name", "checkbox");
-        checkBox.onclick = ()=> {this.updateHighlightTextArea(this.highlightValue)}
 
-        labelDiv.append(inputPrependDiv)
-        inputPrependDiv.append(inputTextDiv)
-        inputTextDiv.append(checkBox)
+        // Add an onclick event to the checkbox
+        checkBox.onclick = () => {
+            this.updateHighlightTextArea(this.highlightValue);
+        };
 
+        // Append the checkbox directly to the labelDiv
+        labelDiv.appendChild(checkBox);
     }
 
 
@@ -867,38 +952,34 @@ class SubLabel{
      * @param well
      * @param isReadonly
      */
-    createEraseLabelButton(id, labelDiv, pid, well, isReadonly){
-
-        var inputGroupDiv = document.createElement("div");
-        inputGroupDiv.setAttribute("class", "input-group-append");
-
+    createEraseLabelButton(id, labelDiv, pid, well, isReadonly) {
+        // Create the button element
         var eraseLabel = document.createElement("button");
-        eraseLabel.setAttribute("id", "erase-label_" + id+"-"+this.pid);
-        eraseLabel.setAttribute("class", "btn btn-danger")
-        eraseLabel.setAttribute("type", "button")
+        eraseLabel.setAttribute("id", "erase-label_" + id + "-" + pid);
+        eraseLabel.setAttribute("class", "btn btn-danger btn-sm"); // Added btn-sm for a smaller button
+        eraseLabel.setAttribute("type", "button");
 
-        if(isReadonly){
-            eraseLabel.onclick = () => {this.eraseLabelStudent(id,labelDiv)}
+        // Set onclick handler based on isReadonly flag
+        if (isReadonly) {
+            eraseLabel.onclick = () => { this.eraseLabelStudent(id, labelDiv); };
+        } else {
+            eraseLabel.onclick = () => { this.eraseLabelTeacher(id, labelDiv); };
         }
-        else{
-            eraseLabel.onclick = () => {this.eraseLabelTeacher(id,labelDiv)}
-        }
 
-
+        // Create and append the trash icon
         var iconTrash = document.createElement("i");
         iconTrash.setAttribute("class", "fa fa-lg fa-trash-o");
 
-        inputGroupDiv.append(eraseLabel);
-        eraseLabel.append(iconTrash);
-        labelDiv.append(eraseLabel);
+        eraseLabel.appendChild(iconTrash);
+        labelDiv.appendChild(eraseLabel);
     }
 
-    createColoringButton(id, outerdiv, pid, color){
+    createColoringButton(id, outerdiv, pid, colorKey){
         var coloring_button = document.createElement("button")
         coloring_button.setAttribute("type", "button")
         coloring_button.setAttribute("class", "btn btn-secondary")
         coloring_button.setAttribute("id", "toolbar-coloring_"+id+"-"+pid)
-        coloring_button.setAttribute("style", "background-color: var(--"+color+");")
+        coloring_button.setAttribute("style", "background-color: "+getColorCode(colorKey)+";")
         coloring_button.onclick = () => {this.set_action(id)}
 
         var iconBrush = document.createElement("i");
@@ -912,11 +993,11 @@ class SubLabel{
     /**
      * @param labelid : string : id of the defined in generateLabelID
      * @param labelName : string : name of the label at the moment of creation.
-     * @param color : string :color linked to this label
+     * @param colorKey : int :color linked to this label get the color code with getColorCode
      * @param pid : string :the id of this problem
      * @param well :
      */
-    createToleranceDiv(labelid, labelName, color, pid, well){
+    createToleranceDiv(labelid, labelName, colorKey, pid, well){
         let outerDiv = $('#div-tolerance-'+pid, well)
 
         var cardDiv = document.createElement("div")
@@ -926,7 +1007,8 @@ class SubLabel{
         // Header
         var cardHeaderDiv = document.createElement("div")
         cardHeaderDiv.setAttribute("class", "card-header")
-        cardHeaderDiv.setAttribute("style", "background-color: var(--"+color+"); ")
+        cardHeaderDiv.setAttribute("style", `background-color: ${getColorCode(colorKey)}; `)
+        generateColorClass(colorKey, pid)
         cardHeaderDiv.setAttribute("id", "heading_"+labelid)
 
         var rowHeaderDivStruct = document.createElement("div")
@@ -971,7 +1053,7 @@ class SubLabel{
         var cardBody = document.createElement("div")
         cardBody.setAttribute("class", "card-body")
 
-        this.createToleranceChoice(labelid, cardBody, pid, color)
+        this.createToleranceChoice(labelid, cardBody, pid, colorKey)
 
         // Exclusion Elements
         var exclusionDiv = document.createElement("div")
@@ -994,7 +1076,7 @@ class SubLabel{
         cardDiv.append(cardCollapse)
         outerDiv.append(cardDiv)
 
-        this.createColoringButton(labelid,$("#div-toolbar-"+pid), pid, color)
+        this.createColoringButton(labelid,$("#div-toolbar-"+pid), pid, colorKey)
 
     }
 
@@ -1256,4 +1338,123 @@ function getRangeId(eid){
 
 function getRangeButtonID(eid){
     return "range_button_"+eid
+}
+
+/**
+ *
+ * @param colorPairs : array of strings with two colors.
+ * @param index : int, the number corresponding to the int in the class name
+ * @param pid : string, pid of this problem
+ */
+function generateGradientClasses(colorPairs, pid) {
+    const color1 = getColorCode(colorPairs[0]);
+    const color2 = getColorCode(colorPairs[1]);
+    const className = getGradiantClassName(colorPairs, pid);
+    if(className === "rainbow"){return}
+
+    if(checkClassExist(className)){return}
+    const style = document.createElement('style');
+    document.head.appendChild(style);
+
+    let cssRules = '';
+
+
+    if (color1 && color2) {
+        cssRules += `
+            .${className} {
+                background: linear-gradient(to top, ${color1} 0%, ${color1} 50%, ${color2} 50%, ${color2} 100%);
+            }
+        `;
+    }
+
+    style.sheet.insertRule(cssRules, style.sheet.cssRules.length);
+}
+
+function generateColorClass(colorKey, pid) {
+    const className = getMonoColorClassName(colorKey, pid);
+    const color = getColorCode(colorKey);
+
+    const classExists = checkClassExist(className)
+
+    if (!classExists) {
+        const style = document.createElement('style');
+        document.head.appendChild(style);
+        let cssRule = `
+            .${className} {
+                background: ${color}
+            }
+        `;
+        style.sheet.insertRule(cssRule, style.sheet.cssRules.length);
+    }
+}
+
+function checkClassExist(className){
+    // Check if class already exists
+    const cssRules = Array.from(document.styleSheets).reduce((rules, sheet) => {
+        try {
+            return rules.concat(Array.from(sheet.cssRules || []));
+        } catch (e) {
+            return rules;
+        }
+    }, []);
+    return cssRules.some(rule => rule.selectorText === `.${className}`);
+}
+
+
+function getGradiantClassName(colorKeys, pid){
+    let colorKeyP = JSON.parse("["+colorKeys+"]")
+    if(colorKeyP.length > 2){return "rainbow"}
+    let name = ""
+    for(let key in colorKeyP){
+        name += '_'+colorKeyP[key]
+    }
+    return `gradient${name}-${pid}`
+}
+
+function getColorCode(colorKey){
+    return colorMap[colorKey]
+}
+
+function sort_unique(arr) {
+    if (arr.length === 0) return arr;
+    arr = arr.sort(function (a, b) { return a*1 - b*1; });
+    var ret = [arr[0]];
+    for (var i = 1; i < arr.length; i++) { //Start loop at 1: arr[0] can never be a duplicate
+        if (arr[i-1] !== arr[i]) {
+            ret.push(arr[i]);
+        }
+    }
+    return ret;
+}
+
+function insertSorted(array, value) {
+    const arr = array.flat()
+    if (arr.length === 0) {
+        arr.push(value);
+        return arr;
+    }
+
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] >= value) {
+            arr.splice(i, 0, value);
+            return arr;
+        }
+    }
+
+    arr.push(value);
+    return arr;
+}
+
+function getMonoColorClassName(colorKey, pid){
+    return 'Mono_Color_'+colorKey.toString()+"-"+pid
+}
+
+function getColorClassName(colorKeys, pid){
+    if(colorKeys.length > 1){
+        return getGradiantClassName(colorKeys, pid)
+    }
+    else{
+        return getMonoColorClassName(colorKeys, pid)
+    }
+
 }

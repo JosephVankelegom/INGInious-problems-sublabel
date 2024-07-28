@@ -145,3 +145,14 @@
 .range-container .btn {
     transition: all 0.5s ease;
 }
+
+.hwt-content mark.rainbow{
+    background: linear-gradient(to top,
+    red,
+    orange,
+    yellow,
+    green,
+    blue,
+    indigo,
+    violet);
+}
