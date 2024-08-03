@@ -160,10 +160,8 @@ class SublabelProblem(Problem):
                                f"    - Status \n"
                                f"    - Comment \n") + output_statement
 
-        if total >= 1:
-            return total, output_statement, None, 0, "total = " + str(total) + "\n"
-        else:
-            return total, output_statement, None, 0, ""
+
+        return total, output_statement, None, 0, ""
 
     @classmethod
     def parse_problem(cls, problem_content):
