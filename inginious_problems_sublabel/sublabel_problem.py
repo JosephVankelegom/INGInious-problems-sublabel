@@ -161,7 +161,7 @@ class SublabelProblem(Problem):
                                f"    - Comment \n") + output_statement
 
 
-        return total, output_statement, None, 0, ""
+        return 1-total, output_statement, None, 0, ""
 
     @classmethod
     def parse_problem(cls, problem_content):
