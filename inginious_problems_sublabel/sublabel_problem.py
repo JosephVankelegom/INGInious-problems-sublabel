@@ -147,18 +147,18 @@ class SublabelProblem(Problem):
 
         total = total / len(answer)
         output_statement = (
-                               f"The correction is by selection (a selection is each zone selected divided by backslash).\n\n"
-                               f"- ✅️ success : you found the selection! \n\n"
-                               f"- 🟧 incomplete: you found part of the selection \n\n"
-                               f"- 🟧 too board : the selection si too big, you encompase the solution and more\n\n"
-                               f"- 🚫 incorrect: didn't find anything\n\n"
-                               f"- 🟧 almost: This selection is a miss or too board, there will be a comment to give you more inforamtion.\n\n\n"
-                               f".. list-table:: **{self.get_name()}** \r"
+                               f"The correction is done by selection (where a selection refers to each zone chosen, separated by a backslash).\n\n"
+                               f"- ✅️ Success: You found the selection! \n\n"
+                               f"- 🟧 Incomplete: You found part of the selection \n\n"
+                               f"- 🟧 Too broad: The selection is too big; it encompasses the solution and more. \n\n"
+                               f"- 🟧 Almost: Part of the selection should not be included.\n\n"
+                               f"- 🚫 Incorrect: No match found.\n\n\n"
+                               f".. list-table:: \r"
                                f"  :widths: 20 10 20\n"
                                f"  :header-rows: 1\n\n"
                                f"  * - Score \n"
                                f"    - Status \n"
-                               f"    - comment \n") + output_statement
+                               f"    - Comment \n") + output_statement
 
         if total >= 1:
             return True, output_statement, None, 0, "total = " + str(total) + "\n"

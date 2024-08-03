@@ -161,7 +161,7 @@ class SubLabel{
         //#$('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
         $('#addLabel-'+ this.pid, this.well).on('click', () => {this.createLabelTeacher(this.pid, this.well)})
 
-        // add the possibility of tabulation  change tab by 3 spaces.
+        // add the possibility of tabulation  change tab by 4 spaces.
         this.textarea.on('keydown', function(e){
             if(e.key === 'Tab'){
                 e.preventDefault();
@@ -177,12 +177,24 @@ class SubLabel{
                 //that.updateValues()
             }
         })
+            // Function to replace tabs with spaces
+        function replaceTabsWithSpaces(textarea) {
+            var currentText = textarea.value;
+            var updatedText = currentText.replace(/\t/g, '    '); // Replace all tabs with 4 spaces
+            textarea.value = updatedText;
+        }
+
+        // change \t by 4 spaces on input and verify that there are no selection after
+        this.textarea.on('input', function() {
+            replaceTabsWithSpaces(this);
+        });
 
         //
         this.textarea.on('input', function(e){
             var start = this.selectionStart;
             var end = this.selectionEnd;
             const indent = that.updateIndexesOnInput(start, end);
+
             //that.updateValues()
         })
 
@@ -285,7 +297,6 @@ class SubLabel{
                 case "eraser":
                     this.highlightSelectionErase(this.pid, this.well);
                     break;
-
                 case "":
                     break;
                 default:
@@ -519,6 +530,7 @@ class SubLabel{
 
         let resultFormat = []
         while (result.length) resultFormat.push(result.splice(0,2));
+        resultFormat = removeEmptyArrays(resultFormat)
         return resultFormat;
 
     }
@@ -617,6 +629,7 @@ class SubLabel{
             }
             else{result = result.concat([ranges[i]])}
         }
+        result = removeEmptyArrays(result)
         return result;
     }
 
@@ -927,6 +940,10 @@ class SubLabel{
      */
     createCheckBox(id, labelDiv, pid, well) {
         // Create the checkbox element
+        var inputPrependDiv = document.createElement("div")
+        inputPrependDiv.setAttribute("class", 'input-group-prepend')
+        var inputTextDiv = document.createElement("div")
+        inputTextDiv.setAttribute("class", "input-group-text")
         var checkBox = document.createElement("input");
         checkBox.setAttribute("type", "checkbox");
         checkBox.setAttribute("id", "checkbox_" + id + "-" + pid);
@@ -939,10 +956,10 @@ class SubLabel{
         };
 
         // Append the checkbox directly to the labelDiv
-        labelDiv.appendChild(checkBox);
+        labelDiv.appendChild(inputPrependDiv);
+        inputPrependDiv.appendChild(inputTextDiv);
+        inputTextDiv.append(checkBox)
     }
-
-
 
     /**
      * Create the Erase button that is linked to each label.
@@ -1457,4 +1474,8 @@ function getColorClassName(colorKeys, pid){
         return getMonoColorClassName(colorKeys, pid)
     }
 
+}
+
+function removeEmptyArrays(arr) {
+    return arr.filter(subArray => subArray.length > 0);
 }
