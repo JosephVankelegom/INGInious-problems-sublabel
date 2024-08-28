@@ -93,11 +93,11 @@ class SublabelProblem(Problem):
             correct = 0
             penalty = 0
             for sel in selection_found[label]:
-                match selection_found[label][sel]:
-                    case 1:
+                if selection_found[label][sel] == 1:
                         found += 1
-                    case 2:
+                elif selection_found[label][sel] == 2:
                         incomplete += 1
+
             not_found = len(selection_found[label]) - found - incomplete - over_tolerance
 
             output_statement_ans_stud = ""
@@ -147,7 +147,7 @@ class SublabelProblem(Problem):
 
         total = total / len(answer)
         output_statement = (
-                               f"The correction is done by selection (where a selection refers to each zone chosen, separated by a backslash).\n\n"
+                               f"The correction is done by selection (where a selection refers to each zone chosen, separated by a line break).\n\n"
                                f"- ✅️ Success: You found the selection! \n\n"
                                f"- 🟧 Incomplete: You found part of the selection \n\n"
                                f"- 🟧 Too broad: The selection is too big; it encompasses the solution and more. \n\n"
@@ -185,20 +185,20 @@ class SublabelProblem(Problem):
                 tol_Type = raw[lid]["type"]
             else :
                 tol_Type = "line"
-            match tol_Type:
-                case "line":
-                    tolerance[lid] = identify_lines(cls._code)
-                case "5 characters":
-                    tolerance_size = 5
-                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
-                case "3 characters":
-                    tolerance_size = 3
-                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
-                case "1 character":
-                    tolerance_size = 1
-                    tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
-                case _:
-                    tolerance[lid] = identify_lines(cls._code)
+            if tol_Type == "line":
+                tolerance[lid] = identify_lines(cls._code)
+            elif tol_Type == "5 characters":
+                tolerance_size = 5
+                tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
+            elif tol_Type == "3 characters":
+                tolerance_size = 3
+                tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
+            elif tol_Type == "1 character":
+                tolerance_size = 1
+                tolerance[lid] = fix_tolerance(cls._answer, tolerance_size, lid)
+            else:
+                tolerance[lid] = fix_tolerance(cls._answer, 0, lid)
+
         return tolerance
 
     def get_exclusion(cls, all_labels):

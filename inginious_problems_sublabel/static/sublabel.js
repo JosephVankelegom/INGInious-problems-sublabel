@@ -482,6 +482,17 @@ class SubLabel{
         this.updateHighlightTextArea(this.highlightValue)
     }
 
+    get_button_from_action(action){
+        switch (action){
+            case "stop":
+                return null
+            case "exclusion":
+                return
+            default:
+                return document.getElementById("toolbar-coloring_"+action+"-"+this.pid)
+        }
+    }
+
     /**
      *
      *
@@ -860,6 +871,8 @@ class SubLabel{
     getColorName(lid){
         return JSON.stringify(this.getColorkey(lid))
     }
+
+
     /////////////////////////////////////
     /////////////////////////////////////
     // Generate HTML From JS
@@ -867,6 +880,19 @@ class SubLabel{
     /////////////////////////////////////
 
 
+    highlightButton(button) {
+
+        // If there is an active button, remove the active class
+        if (this.action !== "stop") {
+            this.get_button_from_action().classList.remove("btn-highlight");
+        }
+
+        // Add the active class to the clicked button
+        button.classList.add("btn-highlight");
+
+        // Update the active button reference
+        this.activeButton = button;
+    }
 
     createLabelStudent(id, name, color){
         //this.createLabelContext(id);
@@ -1044,8 +1070,11 @@ class SubLabel{
 
         var colHeaderIconBar = document.createElement("i")
         colHeaderIconBar.setAttribute("class", "fa fa-bars")
-        colHeaderDivName.append(colHeaderIconBar)
-        colHeaderSpanName.textContent = " Label name : "
+        colHeaderSpanName.append(colHeaderIconBar)
+
+        var labelText = document.createTextNode(" Label name : ");
+        colHeaderSpanName.append(labelText);
+
 
         var colHeaderSpanNameSecond = document.createElement("span")
         colHeaderSpanNameSecond.textContent = labelName
